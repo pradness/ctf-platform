@@ -1,3 +1,7 @@
+# pem files
+*.pem
+*.pem.backup
+
 # Local .terraform directories
 .terraform/
 
