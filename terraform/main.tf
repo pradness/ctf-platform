@@ -17,6 +17,7 @@ resource "aws_vpc" "main" {
   tags = { Name = "ctf-vpc" }
 }
 
+# Public subnet — platform EC2 lives here
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -31,6 +32,15 @@ resource "aws_subnet" "public_b" {
   availability_zone       = "us-east-1b"
   map_public_ip_on_launch = true
   tags = { Name = "ctf-public-subnet-b" }
+}
+
+# Private subnet — attacker + target EC2s live here
+resource "aws_subnet" "private" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.3.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = false
+  tags = { Name = "ctf-private-subnet" }
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -114,19 +124,99 @@ resource "aws_security_group" "rds_sg" {
   tags = { Name = "ctf-rds-sg" }
 }
 
-# EC2
+# Attacker SG — SSH from platform EC2 only, all outbound to private subnet
+resource "aws_security_group" "attacker_sg" {
+  name   = "ctf-attacker-sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ec2_sg.id]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.3.0/24"]
+  }
+  tags = { Name = "ctf-attacker-sg" }
+}
+
+# Target SG — all traffic from attacker SG only, nothing else
+resource "aws_security_group" "target_sg" {
+  name   = "ctf-target-sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [aws_security_group.attacker_sg.id]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.3.0/24"]
+  }
+  tags = { Name = "ctf-target-sg" }
+}
+
+# EC2 — platform server
 resource "aws_instance" "ctf_server" {
-  ami = "ami-05e86b3611c60b0b4"
+  ami                    = "ami-05e86b3611c60b0b4"
   instance_type          = "c7i-flex.large"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
   key_name               = "ctf-key"
+  iam_instance_profile   = aws_iam_instance_profile.platform_profile.name
 
   root_block_device {
     volume_size = 30
   }
 
   tags = { Name = "ctf-server" }
+}
+
+# IAM role — lets platform backend start/stop lab EC2s
+resource "aws_iam_role" "platform_role" {
+  name = "ctf-platform-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "platform_ec2_policy" {
+  name = "ctf-platform-ec2-policy"
+  role = aws_iam_role.platform_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ec2:StartInstances",
+        "ec2:StopInstances",
+        "ec2:DescribeInstances",
+        "ec2:RunInstances",
+        "ec2:TerminateInstances"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
+resource "aws_iam_instance_profile" "platform_profile" {
+  name = "ctf-platform-profile"
+  role = aws_iam_role.platform_role.name
 }
 
 # RDS

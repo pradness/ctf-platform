@@ -58,7 +58,7 @@ spec:
 EOF
 
 echo ">>> Starting Jenkins..."
-docker run -d \
+sudo docker run -d \
   --name jenkins \
   --restart=unless-stopped \
   -p 8080:8080 \
@@ -67,7 +67,7 @@ docker run -d \
   jenkins/jenkins:lts
 
 echo ">>> Starting SonarQube..."
-docker run -d \
+sudo docker run -d \
   --name sonarqube \
   --restart=unless-stopped \
   -p 9000:9000 \
@@ -77,6 +77,6 @@ docker run -d \
 echo ">>> Waiting for Jenkins to start..."
 sleep 30
 echo ">>> Jenkins initial admin password:"
-docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+sudo docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 echo ">>> Done. Jenkins: http://<EC2_IP>:8080 | SonarQube: http://<EC2_IP>:9000"
