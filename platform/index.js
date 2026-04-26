@@ -1,0 +1,1 @@
+console.log("CTF Platform placeholder");
