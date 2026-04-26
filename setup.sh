@@ -80,3 +80,9 @@ echo ">>> Jenkins initial admin password:"
 sudo docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 echo ">>> Done. Jenkins: http://<EC2_IP>:8080 | SonarQube: http://<EC2_IP>:9000"
+
+echo ">>> Installing AWS CLI inside Jenkins..."
+sudo docker exec -u root jenkins bash -c "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o /tmp/awscliv2.zip && unzip /tmp/awscliv2.zip -d /tmp && /tmp/aws/install"
+
+echo ">>> Installing Trivy inside Jenkins..."
+sudo docker exec -u root jenkins bash -c "wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor -o /usr/share/keyrings/trivy.gpg && echo 'deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main' > /etc/apt/sources.list.d/trivy.list && apt-get update && apt-get install -y trivy"
