@@ -1,1 +1,1 @@
-console.log("CTF Platform placeholder");
+console.log("CTF Platform placeholder is working!");
