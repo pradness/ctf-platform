@@ -207,7 +207,15 @@ resource "aws_iam_role_policy" "platform_ec2_policy" {
         "ec2:StopInstances",
         "ec2:DescribeInstances",
         "ec2:RunInstances",
-        "ec2:TerminateInstances"
+        "ec2:TerminateInstances",
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage"
       ]
       Resource = "*"
     }]
