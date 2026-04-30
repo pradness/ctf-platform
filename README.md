@@ -12,6 +12,7 @@ AWS (Terraform-provisioned)
 │   │   ├── challenges namespace → SQLi, XSS, broken-auth pods
 │   │   └── network policies     → challenges namespace fully isolated
 │   ├── Jenkins (Docker container, port 8080)
+│   ├── Platform backend (Docker container, port 3000)
 │   └── SonarQube (Docker container, port 9000)
 ├── EC2 attacker (private subnet, stopped by default)
 │   └── Ubuntu with nmap, sqlmap, hydra, gobuster preinstalled
@@ -45,11 +46,13 @@ AWS (Terraform-provisioned)
 
 Push to GitHub → Jenkins triggers automatically via webhook:
 1. Checkout code from GitHub
-2. Docker build — builds platform image
-3. Trivy scan — fails pipeline on CRITICAL CVEs
+2. Docker build — builds backend image from `platform/Dockerfile`
+3. Trivy scan — fails pipeline on fixable CRITICAL CVEs
 4. Push to ECR — only if Trivy passes
 
-SonarQube is configured but not yet wired into the pipeline (pending fix).
+Notes:
+- Trivy runs with `--ignore-unfixed` and `--scanners vuln` so Debian `will_not_fix` base-image advisories do not block every release forever.
+- SonarQube is configured but not yet wired into the pipeline (pending fix).
 
 ## AWS Account Details
 
@@ -116,6 +119,15 @@ sudo ./setup.sh
 
 This installs Docker, k3s, creates namespaces, applies network policies, starts Jenkins and SonarQube, and prints the Jenkins unlock password.
 
+### 4.1 Apply latest Terraform changes
+
+If infrastructure already exists, re-run Terraform after pulling the latest repo so new rules such as backend port `3000` ingress are applied:
+
+```bash
+cd terraform
+terraform apply
+```
+
 ### 5. Configure Jenkins
 
 1. Go to http://<EC2_PUBLIC_IP>:8080
@@ -163,13 +175,61 @@ Repo → Settings → Webhooks → edit existing webhook:
 2. Login: admin / (password set previously)
 3. Generate a new token if needed: My Account → Security → Generate Token
 
+### 9. Deploy the backend container
+
+Jenkins currently builds, scans, and pushes the backend image to ECR. Deployment to the EC2 host is still manual.
+
+Get the live infrastructure values:
+
+```bash
+cd terraform
+terraform output ec2_public_ip
+terraform output rds_endpoint
+```
+
+SSH to the EC2 instance and run:
+
+```bash
+aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 353863292008.dkr.ecr.us-east-1.amazonaws.com
+
+sudo docker pull 353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:<TAG>
+
+sudo docker rm -f ctf-platform || true
+
+sudo docker run -d \
+  --name ctf-platform \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e PORT=3000 \
+  -e JWT_SECRET=<JWT_SECRET> \
+  -e DB_HOST=<RDS_ENDPOINT_HOSTNAME_ONLY> \
+  -e DB_PORT=5432 \
+  -e DB_NAME=ctfdb \
+  -e DB_USER=ctfadmin \
+  -e DB_PASSWORD=ctfpassword123 \
+  353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:<TAG>
+```
+
+Verify on the EC2 host:
+
+```bash
+curl http://localhost:3000/health
+sudo docker logs ctf-platform --tail 100
+```
+
+Verify externally:
+
+```text
+http://<EC2_PUBLIC_IP>:3000/health
+```
+
 ## Daily Workflow
 
 ### Stopping (minimal cost)
 
 Run on EC2 first:
 ```bash
-sudo docker stop jenkins sonarqube
+sudo docker stop ctf-platform jenkins sonarqube
 exit
 ```
 
@@ -187,7 +247,9 @@ aws rds start-db-instance --db-instance-identifier ctf-postgres
 terraform refresh && terraform output ec2_public_ip
 ssh -i ctf-key.pem ubuntu@<NEW_IP>
 sudo chmod 777 /var/run/docker.sock
+aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 353863292008.dkr.ecr.us-east-1.amazonaws.com
 sudo docker start jenkins sonarqube
+sudo docker start ctf-platform || true
 ```
 
 Then update two places with new IP:
@@ -196,19 +258,25 @@ Then update two places with new IP:
 
 Jenkins job config and pipeline history are preserved in the jenkins_home Docker volume — no reconfiguration needed beyond the IP change.
 
+If the backend container was removed instead of stopped, re-run the manual deploy command from `Deploy the backend container`.
+
 ## What Has Been Built
 
 ### Done
 - Terraform provisions all AWS infrastructure from scratch with one command
 - VPC with public subnet (platform) and private subnet (attacker/target machines)
-- Security groups: platform EC2, RDS (port 5432 from EC2 only), attacker (SSH from platform only), target (all traffic from attacker only)
+- Security groups: platform EC2, RDS (port 5432 from EC2 only), attacker (SSH from platform only), target (all traffic from attacker only), backend port `3000` open on platform EC2
 - IAM role on EC2 with EC2 + ECR permissions for the pipeline
 - k3s running on EC2 with platform and challenges namespaces
 - Network policy isolating challenges namespace — pods cannot reach platform namespace
 - Jenkins running as Docker container, connected to GitHub via webhook
 - SonarQube running as Docker container
-- CI/CD pipeline: checkout → Docker build → Trivy CVE scan (fails on CRITICAL) → ECR push
-- Placeholder platform/Dockerfile and platform/index.js in repo to test pipeline
+- Platform backend implemented in `platform/backend/` with auth, challenge listing, flag submission, leaderboard, JWT auth middleware, PostgreSQL connection, and `/health` endpoint
+- Backend smoke test added with `npm test`
+- Production backend Docker image implemented in `platform/Dockerfile`
+- CI/CD pipeline: checkout → Docker build → Trivy vulnerability scan → ECR push
+- Trivy gating tuned to ignore unfixed base-image advisories while still failing on fixable CRITICAL vulnerabilities
+- Backend image can be pulled from ECR and run manually on the EC2 host on port `3000`
 
 ### Not Started
 - challenges/sqli/ — vulnerable Express app with raw SQL
@@ -217,8 +285,8 @@ Jenkins job config and pipeline history are preserved in the jenkins_home Docker
 - k8s manifests for deploying challenge pods to challenges namespace
 - lab-machines/attacker/setup.sh — installs pentesting tools on Ubuntu
 - lab-machines/targets/easy/setup.sh — vulnerable PHP app + weak SSH
-- platform/backend/ — Express API: auth, challenges, leaderboard, lab start/stop, WebSocket SSH relay
 - platform/frontend/ — HTML/React: challenge list, leaderboard, xterm.js browser terminal
+- Backend deployment automation from Jenkins to EC2
 - OWASP ZAP stage in Jenkinsfile
 - SonarQube properly wired into pipeline (currently hanging issue — needs fix)
 
@@ -235,9 +303,9 @@ ctf-platform/
 │   ├── outputs.tf           # EC2 IP, RDS endpoint, ECR URLs, subnet/SG IDs
 │   └── .terraform.lock.hcl
 ├── platform/
-│   ├── Dockerfile           # Placeholder — node:22-alpine
-│   ├── index.js             # Placeholder
-│   ├── backend/             # NOT YET BUILT
+│   ├── Dockerfile           # Backend production image (Node 20 slim)
+│   ├── .dockerignore        # Keeps local modules/secrets out of Docker context
+│   ├── backend/             # Express API + tests
 │   └── frontend/            # NOT YET BUILT
 ├── challenges/
 │   ├── sqli/                # NOT YET BUILT
@@ -261,9 +329,10 @@ ctf-platform/
 - [x] Day 2 — k3s + Kubernetes namespaces + network policies
 - [x] Day 3 — Jenkins + SonarQube + GitHub webhook
 - [x] Day 4 — Pipeline: Docker build + Trivy CVE scan + ECR push
+- [x] Day 4.5 — Backend image hardening + Trivy policy tuning
 - [ ] Day 5 — Web challenge containers (SQLi, XSS, broken-auth)
 - [ ] Day 6 — Deploy challenges to k3s
 - [ ] Day 7 — Lab machine setup (attacker + target AMIs)
-- [ ] Day 8 — Platform backend (auth, leaderboard, flag submission, WebSocket SSH)
+- [x] Day 8 — Platform backend (auth, leaderboard, flag submission, health check)
 - [ ] Day 9 — Platform frontend (challenge list, browser terminal)
-- [ ] Day 10 — OWASP ZAP + SonarQube fix + hardening
+- [ ] Day 10 — OWASP ZAP + SonarQube fix + backend deployment automation
