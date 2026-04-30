@@ -1,25 +1,26 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-
+require("./config/env");
 const pool = require("./config/db");
-const app = express();
+const { createApp } = require("./app");
 
-app.use(express.json());
-app.use(cors());
+const app = createApp();
 
-app.use("/auth", require("./routes/authRoutes"));
-app.use("/challenges", require("./routes/challengeRoutes"));
-app.use("/submit", require("./routes/flagRoutes"));
-app.use("/leaderboard", require("./routes/leaderboardRoutes"));
+async function startServer() {
+    try {
+        const res = await pool.query("SELECT NOW()");
+        console.log("DB connected:", res.rows[0]);
+    } catch (err) {
+        console.error("DB connection failed:", err.message || err.code || err);
+    }
 
-// DB connection check
-pool.query("SELECT NOW()", (err, res) => {
-    if (err) console.error(err);
-    else console.log("DB connected:", res.rows);
-});
+    const port = process.env.PORT || 3000;
 
-// ✅ use env PORT
-const PORT = process.env.PORT || 3000;
+    return app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = { app, startServer };
