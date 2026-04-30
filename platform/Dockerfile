@@ -2,11 +2,13 @@ FROM node:20
 
 WORKDIR /app
 
-COPY platform/backend/package*.json ./
+ENV NODE_ENV=production
 
-RUN npm install
+COPY backend/package*.json ./
 
-COPY platform/backend ./
+RUN npm ci --omit=dev
+
+COPY backend ./
 
 EXPOSE 3000
 
