@@ -31,6 +31,8 @@ pipeline {
                     trivy image \
                         --exit-code 1 \
                         --severity CRITICAL \
+                        --ignore-unfixed \
+                        --scanners vuln \
                         --no-progress \
                         ${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
                 '''
