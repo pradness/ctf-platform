@@ -1,7 +1,10 @@
-const router = require("express").Router();
-const auth = require("../middleware/authMiddleware");
-const { submitFlag } = require("../controllers/flagController");
+const express = require("express");
+const router = express.Router();
 
-router.post("/", auth, submitFlag);
+const { submitFlag } = require("../controllers/flagController");
+const authMiddleware = require("../middleware/authMiddleware");
+
+// 🔐 PROTECTED ROUTE
+router.post("/", authMiddleware, submitFlag);
 
 module.exports = router;

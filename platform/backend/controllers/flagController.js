@@ -3,53 +3,58 @@ const pool = require("../config/db");
 exports.submitFlag = async (req, res) => {
     try {
         const { challengeId, flag } = req.body;
+        const userId = req.user.id; // 🔥 remove fallback
 
-        // ✅ validation
-        if (!challengeId || !flag) {
-            return res.status(400).json({ message: "challengeId and flag required" });
-        }
-
-        // get challenge
-        const result = await pool.query(
-            "SELECT * FROM challenges WHERE id=$1",
+        // 🔹 Get challenge difficulty (NO static flag anymore)
+        const challenge = await pool.query(
+            "SELECT difficulty FROM challenges WHERE id = $1",
             [challengeId]
         );
 
-        if (!result.rows.length) {
+        if (challenge.rows.length === 0) {
             return res.status(404).json({ message: "Challenge not found" });
         }
 
-        const challenge = result.rows[0];
+        const difficulty = challenge.rows[0].difficulty;
 
-        const correct = challenge.flag === flag;
+        // 🔹 Get dynamic flag for this user
+        const flagResult = await pool.query(
+            "SELECT flag FROM user_flags WHERE user_id=$1 AND challenge_id=$2",
+            [userId, challengeId]
+        );
 
-        if (correct) {
-            // check duplicate submission
-            const existing = await pool.query(
-                "SELECT 1 FROM submissions WHERE user_id=$1 AND challenge_id=$2",
-                [req.user.id, challengeId]
-            );
-
-            if (existing.rows.length > 0) {
-                return res.json({
-                    success: false,
-                    message: "Already solved ⚠️"
-                });
-            }
-
-            await pool.query(
-                "INSERT INTO submissions (user_id, challenge_id, points) VALUES ($1, $2, $3)",
-                [req.user.id, challengeId, 10]
-            );
+        if (flagResult.rows.length === 0 || flag !== flagResult.rows[0].flag) {
+            return res.json({ message: "Wrong flag ❌" });
         }
 
+        // 🔹 Prevent duplicate submissions
+        const alreadySolved = await pool.query(
+            "SELECT * FROM submissions WHERE user_id=$1 AND challenge_id=$2",
+            [userId, challengeId]
+        );
+
+        if (alreadySolved.rows.length > 0) {
+            return res.json({ message: "Already solved ⚠️" });
+        }
+
+        // 🔹 Assign points
+        let points = 10;
+        if (difficulty === "medium") points = 20;
+        if (difficulty === "hard") points = 30;
+
+        // 🔹 Store submission
+        await pool.query(
+            "INSERT INTO submissions (user_id, challenge_id, points) VALUES ($1,$2,$3)",
+            [userId, challengeId, points]
+        );
+
         res.json({
-            success: correct,
-            message: correct ? "Correct 🎉" : "Wrong ❌"
+            message: "Correct flag 🎉",
+            points
         });
 
     } catch (err) {
-        console.error("FLAG ERROR:", err);
+        console.error(err);
         res.status(500).json({ message: "Error submitting flag" });
     }
 };

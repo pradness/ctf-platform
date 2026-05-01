@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 module.exports = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-
+console.log("AUTH MIDDLEWARE HIT");
         if (!authHeader) {
             return res.status(401).json({ message: "No token provided" });
         }

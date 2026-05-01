@@ -1,31 +1,63 @@
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Env (secrets)
+# 🔐 ENV files (VERY IMPORTANT)
 .env
 .env.*
+*.env
 
-# Logs
+# 🔐 Node modules
+node_modules/
+
+# 🔐 Logs
 logs/
 *.log
+npm-debug.log*
 
-# VS Code
-.vscode/
-
-# Build output
-dist/
-build/
-
-# OS files
+# 🔐 OS junk
 .DS_Store
 Thumbs.db
 
-# Terraform (IMPORTANT)
+# 🔐 Docker
+*.pid
+*.sock
+
+# 🔐 Build files
+dist/
+build/
+
+# 🔐 Terraform
 .terraform/
 *.tfstate
-*.tfstate.*
-/package.json
-/package-lock.json
+*.tfstate.backup
+crash.log
+
+# 🔐 VS Code
+.vscode/
+
+# 🔐 Coverage
+coverage/
+
+# 🔐 Temporary files
+tmp/
+temp/
+
+# 🔐 Package locks (optional)
+# package-lock.json
+
+# 🔐 Secrets
+*.pem
+*.key
+*.crt
+# temp / backups
+*.save
+*.tmp
+Running
+
+# docker artifacts
+platform/custom-sqli/c*
+*.tar
+
+# env
+.env
+.env.*
+
+# node
+node_modules/
