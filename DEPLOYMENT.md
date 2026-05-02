@@ -102,3 +102,5 @@ curl http://localhost:3000/health
 - [ ] Stop EC2 and RDS when not in use
 - [ ] Use auto-scaling for production
 - [ ] Monitor ECR storage usage
+
+some text
