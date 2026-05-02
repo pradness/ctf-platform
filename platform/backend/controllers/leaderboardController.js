@@ -3,24 +3,17 @@ const pool = require("../config/db");
 exports.getLeaderboard = async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT user_id, SUM(points) as score
+            SELECT users.username, SUM(submissions.points) as score
             FROM submissions
-            GROUP BY user_id
+            JOIN users ON users.id = submissions.user_id
+            GROUP BY users.username
             ORDER BY score DESC
         `);
 
-        const formatted = result.rows.map(row => ({
-            userId: row.user_id,
-            score: Number(row.score)
-        }));
-
-        res.json({
-            success: true,
-            data: formatted
-        });
+        res.json(result.rows);
 
     } catch (err) {
-        console.error("LEADERBOARD ERROR:", err);
+        console.error(err);
         res.status(500).json({ message: "Error fetching leaderboard" });
     }
 };

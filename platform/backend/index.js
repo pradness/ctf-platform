@@ -1,26 +1,88 @@
-require("./config/env");
+require("dotenv").config();
+
+const express = require("express");
+const cors = require("cors");
+const { exec } = require("child_process");
+
 const pool = require("./config/db");
-const { createApp } = require("./app");
 
-const app = createApp();
+const app = express();
+const rateLimit = require("express-rate-limit");
 
-async function startServer() {
+const limiter = rateLimit({
+    windowMs: 60 * 1000, // 1 min
+    max: 10, // max 10 requests per minute
+});
+
+app.use(limiter);
+/* -------------------- MIDDLEWARE -------------------- */
+app.use(express.json());
+app.use(cors());
+
+// request logger
+app.use((req, res, next) => {
+    console.log("➡️ Incoming:", req.method, req.url);
+    next();
+});
+
+/* -------------------- ROUTES -------------------- */
+app.use("/auth", require("./routes/authRoutes"));
+app.use("/challenges", require("./routes/challengeRoutes"));
+app.use("/submit", require("./routes/flagRoutes"));
+app.use("/leaderboard", require("./routes/leaderboardRoutes"));
+app.use("/container", require("./routes/containerRoutes")); // 🔥 NEW
+
+// root route
+app.get("/", (req, res) => {
+    res.send("CTF Backend Running 🚀");
+});
+
+/* -------------------- DB TEST -------------------- */
+pool.query("SELECT NOW()")
+    .then(res => console.log("DB connected:", res.rows))
+    .catch(err => console.error("DB ERROR:", err));
+
+/* -------------------- CLEANUP SYSTEM -------------------- */
+setInterval(async () => {
     try {
-        const res = await pool.query("SELECT NOW()");
-        console.log("DB connected:", res.rows[0]);
+        const expired = await pool.query(
+            "SELECT * FROM containers WHERE expires_at < NOW()"
+        );
+
+        for (let c of expired.rows) {
+            console.log("🧹 Removing container:", c.container_id);
+
+            exec(`docker stop ${c.container_id}`);
+            exec(`docker rm ${c.container_id}`);
+        }
+
+        await pool.query(
+            "DELETE FROM containers WHERE expires_at < NOW()"
+        );
+
     } catch (err) {
-        console.error("DB connection failed:", err.message || err.code || err);
+        console.error("Cleanup error:", err);
     }
+}, 60000); // runs every 60 sec
 
-    const port = process.env.PORT || 3000;
+/* -------------------- 404 HANDLER -------------------- */
+app.use((req, res) => {
+    console.log("❌ Route not found:", req.url);
+    res.status(404).json({ message: "Route not found" });
+});
 
-    return app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
+/* -------------------- ERROR HANDLER -------------------- */
+app.use((err, req, res, next) => {
+    console.error("🔥 GLOBAL ERROR:", err);
+    res.status(500).json({
+        message: "Internal Server Error",
+        error: err.message
     });
-}
+});
 
-if (require.main === module) {
-    startServer();
-}
+/* -------------------- SERVER START -------------------- */
+const PORT = process.env.PORT || 3000;
 
-module.exports = { app, startServer };
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT} 🚀`);
+});
