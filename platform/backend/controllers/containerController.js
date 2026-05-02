@@ -27,11 +27,13 @@ exports.startChallenge = async (req, res) => {
         const flag = `FLAG{${userId}_${crypto.randomBytes(4).toString("hex")}}`;
         console.log("Generated flag:", flag);
 
+        // store flag in backend DB (for validation later)
         await pool.query(
             "INSERT INTO user_flags (user_id, challenge_id, flag) VALUES ($1,$2,$3)",
             [userId, challengeId, flag]
         );
 
+        /* -------------------- START CONTAINER -------------------- */
         const { stdout } = await execAsync(
             `docker run -d -p ${randomPort}:80 custom-sqli`
         );
@@ -39,21 +41,8 @@ exports.startChallenge = async (req, res) => {
         const containerId = stdout.trim();
         console.log("Container started:", containerId);
 
-        // ⏳ wait for MySQL
-        await new Promise(r => setTimeout(r, 8000));
-
-        /* -------------------- INSERT FLAG -------------------- */
-        try {
-            await execAsync(`
-docker exec ${containerId} mysql -uroot ctf -e "
-INSERT INTO users (username, password, secret) 
-VALUES ('flag', 'flagpass', '${flag}');
-"
-`);
-            console.log("✅ FLAG INSERTED");
-        } catch (err) {
-            console.error("❌ INSERT FAILED:", err);
-        }
+        // ✅ NO MYSQL / NO EXEC / NO WAIT
+        console.log("✅ SQLite challenge ready");
 
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 

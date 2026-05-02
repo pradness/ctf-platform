@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+console.log("DB PASSWORD:", process.env.DB_PASSWORD);
 const express = require("express");
 const cors = require("cors");
 const { exec } = require("child_process");
@@ -11,7 +11,7 @@ const rateLimit = require("express-rate-limit");
 
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 min
-    max: 10, // max 10 requests per minute
+    max: 1000, // max 10 requests per minute
 });
 
 app.use(limiter);
@@ -26,7 +26,9 @@ app.use((req, res, next) => {
 });
 
 /* -------------------- ROUTES -------------------- */
-app.use("/auth", require("./routes/authRoutes"));
+const authRoutes = require("./routes/authRoutes");
+console.log("✅ Mounting /auth routes");
+app.use("/auth", authRoutes);
 app.use("/challenges", require("./routes/challengeRoutes"));
 app.use("/submit", require("./routes/flagRoutes"));
 app.use("/leaderboard", require("./routes/leaderboardRoutes"));

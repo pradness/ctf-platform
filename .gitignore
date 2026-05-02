@@ -57,3 +57,4 @@ platform/custom-sqli/c*
 
 # node
 node_modules/
+.env
