@@ -42,8 +42,8 @@ export const challengesAPI = {
 };
 
 export const containerAPI = {
-  start: async () => {
-    const res = await api.post('/container/start');
+  start: async (challengeId) => {
+    const res = await api.post('/container/start', { challengeId });
     return res.data;
   },
   stop: async (containerId) => {

@@ -11,15 +11,16 @@ const Home = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const handleStartChallenge = async () => {
+  const handleStartChallenge = async (challengeId) => {
     setIsStarting(true);
     try {
-      const res = await containerAPI.start();
+      const res = await containerAPI.start(challengeId);
       
       setActiveContainer({
         id: res.containerId,
         url: res.url,
-        expiresAt: res.expiresAt
+        expiresAt: res.expiresAt,
+        challengeId
       });
       
       addToast(res.message || 'Challenge started successfully', 'success');
@@ -84,7 +85,7 @@ const Home = () => {
           <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             
             <button 
-              onClick={handleStartChallenge}
+              onClick={() => handleStartChallenge(1)}
               className="cyber-btn primary-btn"
               disabled={isStarting}
             >
@@ -92,7 +93,7 @@ const Home = () => {
               {isStarting ? 'INITIALIZING...' : 'START CHALLENGE'}
             </button>
             
-            {activeContainer && (
+            {activeContainer?.challengeId === 1 && (
               <button 
                 onClick={() => window.open(activeContainer.url, "_blank")}
                 className="cyber-btn secondary-btn"
@@ -110,7 +111,7 @@ const Home = () => {
               SUBMIT FLAG
             </button>
 
-            {activeContainer && (
+            {activeContainer?.challengeId === 1 && (
               <button 
                 onClick={handleStopChallenge}
                 className="cyber-btn"
@@ -127,7 +128,7 @@ const Home = () => {
           <div className="card-glitch-layer"></div>
         </div>
 
-        {/* CTF BOX CHALLENGE CARD (LOCAL) */}
+        {/* FRIEND'S CHALLENGE CARD */}
         <div className="glass-panel challenge-card available">
           <div className="card-header">
             <h2 className="challenge-title">CTF Box</h2>
@@ -135,25 +136,13 @@ const Home = () => {
           </div>
           
           <p className="challenge-desc">
-            Multi-flag challenge (3 flags). All tracking happens locally to bypass the remote server.
+            Multi-flag challenge. Externally hosted platform. Find the hidden flags.
           </p>
           
           <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             
             <button 
-              onClick={() => {
-                // Save flags locally in browser's "JSON" storage
-                localStorage.setItem('local_ctf_flags', JSON.stringify([
-                  'hackme{script_kidde}',
-                  'hackme{gud_ol_eval}',
-                  'hackme{find_da_exploit}'
-                ]));
-                if (!localStorage.getItem('local_ctf_submissions')) {
-                  localStorage.setItem('local_ctf_submissions', JSON.stringify([]));
-                }
-                addToast('Local CTF tracking initialized', 'success');
-                window.open("http://16.16.253.244/", "_blank");
-              }}
+              onClick={() => window.open("http://16.16.253.244/", "_blank")}
               className="cyber-btn primary-btn"
             >
               <Play size={18} />
@@ -161,32 +150,12 @@ const Home = () => {
             </button>
             
             <button 
-              onClick={() => navigate('/submit/2')}
+              onClick={() => navigate('/submit/3')}
               className="cyber-btn secondary-btn"
               style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
             >
               <Flag size={18} />
               SUBMIT FLAG
-            </button>
-
-            <button 
-              onClick={() => {
-                const submissions = localStorage.getItem('local_ctf_submissions') || '[]';
-                const blob = new Blob([submissions], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'ctf_box_submissions.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                addToast('JSON log downloaded!', 'success');
-              }}
-              className="cyber-btn secondary-btn"
-              style={{ borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)', marginLeft: 'auto' }}
-            >
-              DOWNLOAD JSON LOG
             </button>
           </div>
           <div className="card-glitch-layer"></div>

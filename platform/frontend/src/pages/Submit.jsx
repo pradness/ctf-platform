@@ -21,34 +21,14 @@ const Submit = () => {
     setSubmitting(true);
     
     try {
-      const cid = challengeId || '1';
+      const cid = challengeId ? parseInt(challengeId, 10) : 1;
       
-      // LOCAL CTF BOX LOGIC (Challenge 2)
-      if (cid === '2') {
-        const localFlags = JSON.parse(localStorage.getItem('local_ctf_flags') || '[]');
-        let localSubmissions = JSON.parse(localStorage.getItem('local_ctf_submissions') || '[]');
-        
-        if (!localFlags.includes(flag)) {
-          addToast('Incorrect Flag ❌', 'error');
-        } else if (localSubmissions.includes(flag)) {
-          addToast('Already Submitted ⚠️', 'error');
-        } else {
-          localSubmissions.push(flag);
-          localStorage.setItem('local_ctf_submissions', JSON.stringify(localSubmissions));
-          addToast('Correct Flag ✅ +10 points', 'success');
-          setTimeout(() => navigate('/home'), 1500);
-        }
-        
-        setFlag('');
-        setSubmitting(false);
-        return;
-      }
+      console.log("Submitting flag:", flag);
       
-      // REMOTE SQLi LOGIC (Challenge 1)
-      const res = await challengesAPI.submitFlag(1, flag);
+      const res = await challengesAPI.submitFlag(cid, flag);
       
       if (res.message && res.message.includes("Correct")) {
-        addToast('Correct Flag ✅', 'success');
+        addToast(`Correct Flag ✅ +${res.points || ''} points`, 'success');
         setTimeout(() => navigate('/home'), 1500);
       } else {
         addToast(res.message || 'Incorrect Flag ❌', 'error');
