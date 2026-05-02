@@ -81,13 +81,13 @@ curl http://localhost:3000/health
 ```
 
 ## Frontend Deployment (Manual)
-- [ ] Copy frontend build to nginx/web server on EC2
-- [ ] Configure to proxy `/api` requests to backend on 3000
-- [ ] Set `VITE_API_BASE_URL` environment variable during build
+- [x] Copy frontend build to nginx/web server on EC2
+- [x] Configure to proxy `/api` requests to backend on 3000
+- [x] Set `VITE_API_BASE_URL` environment variable during build
 
 ## Verification
-- [ ] Backend health: `curl http://<EC2_IP>:3000/health`
-- [ ] Frontend loads: `http://<EC2_IP>/`
+- [x] Backend health: `curl http://<EC2_IP>:3000/health`
+- [x] Frontend loads: `http://<EC2_IP>/`
 - [ ] Login works with credentials
 - [ ] Can view challenges and leaderboard
 - [ ] Can submit flags (if challenges deployed)

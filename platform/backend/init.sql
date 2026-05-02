@@ -54,8 +54,7 @@ INSERT INTO challenges (name, description, difficulty) VALUES
     ('Broken Auth', 'Bypass authentication mechanisms.', 'hard')
 ON CONFLICT DO NOTHING;
 
--- Insert sample user (password: admin123 hashed with bcrypt)
--- Note: Use real hashed passwords in production
+-- Insert sample user (password: admin123)
 INSERT INTO users (username, password) VALUES
-    ('admin', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/R1i')
+    ('admin', '$2b$10$slYQmyNdGzin7olVZfJqDOI26g3J8KXHVi9YKM5kI7sVfq0qNXfje')
 ON CONFLICT DO NOTHING;

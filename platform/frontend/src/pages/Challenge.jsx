@@ -45,6 +45,8 @@ const Challenge = () => {
 
   if (!challengeInfo) return <div className="loading-screen">Loading Challenge Data...</div>;
 
+  const isExternalChallenge = Boolean(challengeInfo.url);
+
   return (
     <div className="page-container animate-fade-in">
       <button onClick={() => navigate('/home')} className="back-btn mb-6">
@@ -76,26 +78,43 @@ const Challenge = () => {
           </div>
         </div>
 
-        <div className="flag-submission-area">
-          <h3 className="submit-title">Submit Flag</h3>
-          <p className="submit-desc">Try 'flag{'{'}hacker{'}'}' for demo purposes</p>
-          <form onSubmit={handleSubmit} className="flag-form">
-            <div className="input-group">
-              <Flag className="input-icon" size={20} />
-              <input
-                type="text"
-                placeholder="flag{...}"
-                value={flag}
-                onChange={(e) => setFlag(e.target.value)}
-                className="cyber-input"
-                required
-              />
-            </div>
-            <button type="submit" className="cyber-btn primary-btn" disabled={submitting}>
-              {submitting ? 'VERIFYING...' : 'SUBMIT_FLAG'}
-            </button>
-          </form>
-        </div>
+        {isExternalChallenge && (
+          <div className="flag-submission-area">
+            <h3 className="submit-title">Open Lab</h3>
+            <p className="submit-desc">This challenge runs as a standalone app. Open it and solve it directly.</p>
+            <a
+              href={challengeInfo.url}
+              target="_blank"
+              rel="noreferrer"
+              className="cyber-btn primary-btn inline-flex items-center justify-center"
+            >
+              Launch Custom SQLi
+            </a>
+          </div>
+        )}
+
+        {!isExternalChallenge && (
+          <div className="flag-submission-area">
+            <h3 className="submit-title">Submit Flag</h3>
+            <p className="submit-desc">Try 'flag{'{'}hacker{'}'}' for demo purposes</p>
+            <form onSubmit={handleSubmit} className="flag-form">
+              <div className="input-group">
+                <Flag className="input-icon" size={20} />
+                <input
+                  type="text"
+                  placeholder="flag{...}"
+                  value={flag}
+                  onChange={(e) => setFlag(e.target.value)}
+                  className="cyber-input"
+                  required
+                />
+              </div>
+              <button type="submit" className="cyber-btn primary-btn" disabled={submitting}>
+                {submitting ? 'VERIFYING...' : 'SUBMIT_FLAG'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
