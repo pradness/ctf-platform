@@ -9,8 +9,50 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const data = await leaderboardAPI.getLeaderboard();
-        setLeaderboard(data);
+        const dbData = await leaderboardAPI.getLeaderboard();
+        
+        // 1. Calculate local points
+        const localSubmissions = JSON.parse(localStorage.getItem('local_ctf_submissions') || '[]');
+        const localPoints = localSubmissions.length * 10; // 10 points per flag
+        const currentUsername = localStorage.getItem('username');
+        
+        // 2. Merge local points into DB data
+        let userExistsInDb = false;
+        const mergedData = dbData.map(user => {
+          if (user.username === currentUsername) {
+            userExistsInDb = true;
+            return {
+              ...user,
+              total_score: (Number(user.total_score || user.score || 0) + localPoints).toString(),
+              solved_count: (Number(user.solved_count || 0) + localSubmissions.length).toString()
+            };
+          }
+          return user;
+        });
+        
+        // 3. If user only solved local challenges (not in DB yet)
+        if (!userExistsInDb && localPoints > 0 && currentUsername) {
+          mergedData.push({
+            username: currentUsername,
+            total_score: localPoints.toString(),
+            solved_count: localSubmissions.length.toString()
+          });
+        }
+        
+        // 4. Re-sort by total points descending
+        mergedData.sort((a, b) => {
+          const scoreA = Number(a.total_score || a.score || 0);
+          const scoreB = Number(b.total_score || b.score || 0);
+          return scoreB - scoreA;
+        });
+        
+        // 5. Re-assign ranks
+        const finalData = mergedData.map((user, index) => ({
+          ...user,
+          rank: index + 1
+        }));
+        
+        setLeaderboard(finalData);
       } catch (error) {
         console.error("Failed to load leaderboard");
       } finally {

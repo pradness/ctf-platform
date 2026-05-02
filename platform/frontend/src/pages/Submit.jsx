@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Terminal, Flag, ArrowLeft } from 'lucide-react';
 import { challengesAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 
 const Submit = () => {
   const navigate = useNavigate();
+  const { challengeId } = useParams();
   const { addToast } = useToast();
   const [flag, setFlag] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -18,12 +19,34 @@ const Submit = () => {
     }
     
     setSubmitting(true);
+    
     try {
-      // Challenge ID is implicitly 1 for the SQLi challenge as per requirements
+      const cid = challengeId || '1';
+      
+      // LOCAL CTF BOX LOGIC (Challenge 2)
+      if (cid === '2') {
+        const localFlags = JSON.parse(localStorage.getItem('local_ctf_flags') || '[]');
+        let localSubmissions = JSON.parse(localStorage.getItem('local_ctf_submissions') || '[]');
+        
+        if (!localFlags.includes(flag)) {
+          addToast('Incorrect Flag ❌', 'error');
+        } else if (localSubmissions.includes(flag)) {
+          addToast('Already Submitted ⚠️', 'error');
+        } else {
+          localSubmissions.push(flag);
+          localStorage.setItem('local_ctf_submissions', JSON.stringify(localSubmissions));
+          addToast('Correct Flag ✅ +10 points', 'success');
+          setTimeout(() => navigate('/home'), 1500);
+        }
+        
+        setFlag('');
+        setSubmitting(false);
+        return;
+      }
+      
+      // REMOTE SQLi LOGIC (Challenge 1)
       const res = await challengesAPI.submitFlag(1, flag);
       
-      // Backend returns either { message: "Correct flag 🎉", points } 
-      // or { message: "Wrong flag ❌" } / "Already solved ⚠️"
       if (res.message && res.message.includes("Correct")) {
         addToast('Correct Flag ✅', 'success');
         setTimeout(() => navigate('/home'), 1500);

@@ -68,16 +68,16 @@ const Home = () => {
         </div>
       </header>
 
-      <div className="challenges-grid" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="challenges-grid">
         
         {/* SQL INJECTION CHALLENGE CARD */}
-        <div className="glass-panel challenge-card available" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div className="glass-panel challenge-card available">
           <div className="card-header">
             <h2 className="challenge-title">SQL Injection Challenge</h2>
             <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
           </div>
           
-          <p className="challenge-desc" style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>
+          <p className="challenge-desc">
             Exploit SQL Injection vulnerability to retrieve the flag. A dedicated DVWA instance will be spun up just for you.
           </p>
           
@@ -102,7 +102,7 @@ const Home = () => {
             )}
 
             <button 
-              onClick={() => navigate('/submit')}
+              onClick={() => navigate('/submit/1')}
               className="cyber-btn secondary-btn"
               style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
             >
@@ -124,6 +124,71 @@ const Home = () => {
             
           </div>
           
+          <div className="card-glitch-layer"></div>
+        </div>
+
+        {/* CTF BOX CHALLENGE CARD (LOCAL) */}
+        <div className="glass-panel challenge-card available">
+          <div className="card-header">
+            <h2 className="challenge-title">CTF Box</h2>
+            <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
+          </div>
+          
+          <p className="challenge-desc">
+            Multi-flag challenge (3 flags). All tracking happens locally to bypass the remote server.
+          </p>
+          
+          <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            
+            <button 
+              onClick={() => {
+                // Save flags locally in browser's "JSON" storage
+                localStorage.setItem('local_ctf_flags', JSON.stringify([
+                  'hackme{script_kidde}',
+                  'hackme{gud_ol_eval}',
+                  'hackme{find_da_exploit}'
+                ]));
+                if (!localStorage.getItem('local_ctf_submissions')) {
+                  localStorage.setItem('local_ctf_submissions', JSON.stringify([]));
+                }
+                addToast('Local CTF tracking initialized', 'success');
+                window.open("http://16.16.253.244/", "_blank");
+              }}
+              className="cyber-btn primary-btn"
+            >
+              <Play size={18} />
+              START CHALLENGE
+            </button>
+            
+            <button 
+              onClick={() => navigate('/submit/2')}
+              className="cyber-btn secondary-btn"
+              style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
+            >
+              <Flag size={18} />
+              SUBMIT FLAG
+            </button>
+
+            <button 
+              onClick={() => {
+                const submissions = localStorage.getItem('local_ctf_submissions') || '[]';
+                const blob = new Blob([submissions], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ctf_box_submissions.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                addToast('JSON log downloaded!', 'success');
+              }}
+              className="cyber-btn secondary-btn"
+              style={{ borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)', marginLeft: 'auto' }}
+            >
+              DOWNLOAD JSON LOG
+            </button>
+          </div>
           <div className="card-glitch-layer"></div>
         </div>
         

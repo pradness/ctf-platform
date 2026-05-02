@@ -20,6 +20,7 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/submit/:challengeId" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
             <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
