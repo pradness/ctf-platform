@@ -221,7 +221,9 @@ resource "aws_iam_role_policy" "platform_ec2_policy" {
         "ecr:InitiateLayerUpload",
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
-        "ecr:PutImage"
+        "ecr:PutImage",
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBClusters"
       ]
       Resource = "*"
     }]

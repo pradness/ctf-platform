@@ -13,7 +13,13 @@ exports.getLeaderboard = async (req, res) => {
             ORDER BY score DESC
         `);
 
-        res.json(result.rows);
+        const leaderboard = result.rows.map((row, index) => ({
+            rank: index + 1,
+            username: row.username,
+            points: row.points
+        }));
+
+        res.json(leaderboard);
 
     } catch (err) {
         console.error("Leaderboard error:", err);
