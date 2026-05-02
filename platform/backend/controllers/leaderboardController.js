@@ -3,14 +3,20 @@ const pool = require("../config/db");
 exports.getLeaderboard = async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT users.username, SUM(submissions.points) as score
+            SELECT users.username, SUM(submissions.points) as points
             FROM submissions
             JOIN users ON users.id = submissions.user_id
             GROUP BY users.username
-            ORDER BY score DESC
+            ORDER BY points DESC
         `);
 
-        res.json(result.rows);
+        const leaderboard = result.rows.map((row, index) => ({
+            rank: index + 1,
+            username: row.username,
+            points: row.points
+        }));
+
+        res.json(leaderboard);
 
     } catch (err) {
         console.error(err);

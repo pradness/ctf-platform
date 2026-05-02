@@ -1,12 +1,22 @@
 #!/bin/bash
 set -e
 
+ECR_REGISTRY="353863292008.dkr.ecr.us-east-1.amazonaws.com"
+AWS_REGION="us-east-1"
+DB_HOST="ctf-postgres.cmv86oiq0o6f.us-east-1.rds.amazonaws.com"
+
 echo ">>> Installing Docker..."
 sudo apt-get update -y
-sudo apt-get install -y docker.io
+sudo apt-get install -y docker.io unzip curl
 sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker ubuntu
+sudo chmod 777 /var/run/docker.sock
+
+echo ">>> Installing AWS CLI..."
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+unzip /tmp/awscliv2.zip -d /tmp
+sudo /tmp/aws/install
 
 echo ">>> Installing k3s..."
 curl -sfL https://get.k3s.io | sh -
@@ -57,6 +67,33 @@ spec:
         cidr: 0.0.0.0/0
 EOF
 
+echo ">>> Logging into ECR..."
+aws ecr get-login-password --region ${AWS_REGION} | sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
+echo ">>> Getting latest ctf-platform image tag..."
+LATEST_TAG=$(aws ecr describe-images \
+  --repository-name ctf-platform \
+  --region ${AWS_REGION} \
+  --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
+  --output text)
+
+echo ">>> Starting ctf-platform (tag: ${LATEST_TAG})..."
+sudo docker run -d \
+  --name ctf-platform \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e PORT=3000 \
+  -e DB_HOST=${DB_HOST} \
+  -e DB_PORT=5432 \
+  -e DB_NAME=ctfdb \
+  -e DB_USER=ctfadmin \
+  -e DB_PASSWORD=ctfpassword123 \
+  -e JWT_SECRET=supersecretkey123 \
+  ${ECR_REGISTRY}/ctf-platform:${LATEST_TAG}
+
+sleep 5
+curl http://localhost:3000/health && echo ">>> Backend is up!" || echo ">>> Backend health check failed"
+
 echo ">>> Starting Jenkins..."
 sudo docker run -d \
   --name jenkins \
@@ -64,6 +101,8 @@ sudo docker run -d \
   -p 8080:8080 \
   -p 50000:50000 \
   -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /usr/bin/docker:/usr/bin/docker \
   jenkins/jenkins:lts
 
 echo ">>> Starting SonarQube..."
@@ -76,13 +115,18 @@ sudo docker run -d \
 
 echo ">>> Waiting for Jenkins to start..."
 sleep 30
-echo ">>> Jenkins initial admin password:"
-sudo docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
-
-echo ">>> Done. Jenkins: http://<EC2_IP>:8080 | SonarQube: http://<EC2_IP>:9000"
 
 echo ">>> Installing AWS CLI inside Jenkins..."
 sudo docker exec -u root jenkins bash -c "curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o /tmp/awscliv2.zip && unzip /tmp/awscliv2.zip -d /tmp && /tmp/aws/install"
 
 echo ">>> Installing Trivy inside Jenkins..."
-sudo docker exec -u root jenkins bash -c "wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor -o /usr/share/keyrings/trivy.gpg && echo 'deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main' > /etc/apt/sources.list.d/trivy.list && apt-get update && apt-get install -y trivy"
+sudo docker exec -u root jenkins bash -c "apt-get update -y && apt-get install -y wget gpg && wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor -o /usr/share/keyrings/trivy.gpg && echo 'deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main' > /etc/apt/sources.list.d/trivy.list && apt-get update && apt-get install -y trivy"
+
+echo ">>> Jenkins initial admin password:"
+sudo docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+echo ""
+echo ">>> Done."
+echo "    Backend:   http://<EC2_IP>:3000/health"
+echo "    Jenkins:   http://<EC2_IP>:8080"
+echo "    SonarQube: http://<EC2_IP>:9000"

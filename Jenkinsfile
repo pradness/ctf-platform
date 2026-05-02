@@ -48,6 +48,15 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    chmod +x ./deploy.sh
+                    ./deploy.sh ${IMAGE_TAG}
+                '''
+            }
+        }
     }
 
     post {
