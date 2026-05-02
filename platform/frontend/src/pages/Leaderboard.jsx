@@ -50,22 +50,24 @@ const Leaderboard = () => {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.map((user) => (
-                <tr key={user.rank} className={user.rank <= 3 ? 'top-tier' : ''}>
+              {leaderboard.map((user, index) => (
+                <tr key={user.rank || index} className={(user.rank || index + 1) <= 3 ? 'top-tier' : ''}>
                   <td className="rank-cell">
-                    {getRankIcon(user.rank)}
+                    {getRankIcon(user.rank || index + 1)}
                   </td>
                   <td className="user-cell">
                     <span className="username">{user.username}</span>
                     {user.username === localStorage.getItem('username') && <span className="you-badge">YOU</span>}
                   </td>
-                  <td className="points-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span>{user.total_score || user.score || user.points || 0} PTS</span>
-                    { (user.solved_count !== undefined) && (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 'normal' }}>
-                        ({user.solved_count} {Number(user.solved_count) === 1 ? 'solve' : 'solves'})
-                      </span>
-                    )}
+                  <td className="points-cell">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                      <span className="score-value">{user.total_score || user.score || user.points || 0} PTS</span>
+                      { user.solved_count !== undefined && (
+                        <span className="solved-count" style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 'normal' }}>
+                          ({user.solved_count} {Number(user.solved_count) === 1 ? 'solve' : 'solves'})
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
