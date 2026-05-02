@@ -1,0 +1,32 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Copy and run setup
+COPY setup.sh /setup.sh
+RUN chmod +x /setup.sh && bash /setup.sh
+
+# Install gosu for privilege dropping
+RUN apt-get install -y gosu
+
+# Player SSH user
+RUN useradd -m -s /bin/bash player && \
+    echo "player:ctf" | chpasswd
+
+# SSH directory
+RUN mkdir -p /var/run/sshd
+
+# Fix Apache ownership (must be root at this point)
+#RUN chown -R www-data:www-data /var/www/html \
+#    /var/run/apache2 \
+#    /var/log/apache2 \
+#    /var/lock/apache2
+
+#COPY entrypoint.sh /entrypoint.sh
+#RUN chmod +x /entrypoint.sh
+
+EXPOSE 80 22
+
+CMD ["bash", "-c", "service ssh start && apache2ctl -D FOREGROUND"]
+
+# Stay as root — entrypoint handles privilege drop for Apache
+#ENTRYPOINT ["/entrypoint.sh"]
