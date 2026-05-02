@@ -5,22 +5,18 @@ exports.getLeaderboard = async (req, res) => {
         const result = await pool.query(`
             SELECT 
                 u.username,
-                COALESCE(SUM(c.points), 0) AS total_score,
-                COUNT(c.id) AS solved_count
+                SUM(s.points)::int AS score,
+                RANK() OVER (ORDER BY SUM(s.points) DESC)::int AS rank
             FROM users u
-            JOIN (
-                SELECT DISTINCT user_id, challenge_id 
-                FROM submissions
-            ) s ON u.id = s.user_id
-            JOIN challenges c ON s.challenge_id = c.id
+            JOIN submissions s ON u.id = s.user_id
             GROUP BY u.username
-            ORDER BY total_score DESC
+            ORDER BY score DESC
         `);
 
         res.json(result.rows);
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to fetch leaderboard" });
+        console.error("Leaderboard error:", err);
+        res.status(500).json({ message: "Error fetching leaderboard" });
     }
 };
