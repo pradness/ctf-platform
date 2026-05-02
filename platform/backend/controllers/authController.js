@@ -6,8 +6,8 @@ const pool = require("../config/db");
 exports.signup = async (req, res) => {
     try {
         const { username, password } = req.body;
-
-        if (!username || !password) {
+	console.log("🔥 SIGNUP HIT", req.body);
+	if (!username || !password) {
             return res.status(400).json({ message: "Username and password required" });
         }
 
@@ -30,9 +30,9 @@ exports.signup = async (req, res) => {
         res.json({ message: "User created successfully" });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error signing up" });
-    }
+    console.error("SIGNUP ERROR FULL:", err);
+    res.status(500).json({ message: err.message });
+}
 };
 
 // LOGIN

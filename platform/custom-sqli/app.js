@@ -1,35 +1,39 @@
 const express = require("express");
-const mysql = require("mysql2");
+const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
 
-// 🔥 IMPORTANT
 app.use(express.urlencoded({ extended: true }));
 
-let db;
+/* -------------------- FLAG FROM ENV -------------------- */
+const FLAG = process.env.FLAG || "FLAG{default}";
 
-/* ---------------- WAIT FOR MYSQL ---------------- */
-function connectDB() {
-    db = mysql.createConnection({
-        host: "db",
-        user: "root",
-        password: "root",
-        database: "ctf"
-    });
+/* -------------------- DB SETUP -------------------- */
+const db = new sqlite3.Database(":memory:");
 
-    db.connect((err) => {
-        if (err) {
-            console.log("⏳ Waiting for MySQL...");
-            setTimeout(connectDB, 2000);
-        } else {
-            console.log("✅ MySQL Connected");
-        }
-    });
-}
+db.serialize(() => {
+    console.log("📦 Initializing SQLite DB...");
+    console.log("🚩 FLAG:", FLAG);
 
-connectDB();
+    db.run(`
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            password TEXT,
+            secret TEXT
+        )
+    `);
 
-/* ---------------- LOGIN PAGE ---------------- */
+    // ✅ INSERT FLAG HERE (dynamic)
+    db.run(`
+        INSERT INTO users (username, password, secret)
+        VALUES ('admin', 'admin', '${FLAG}')
+    `);
+
+    console.log("✅ SQLite Ready");
+});
+
+/* -------------------- HOME -------------------- */
 app.get("/", (req, res) => {
     res.send(`
         <h2>Login SQLi Challenge</h2>
@@ -41,11 +45,8 @@ app.get("/", (req, res) => {
     `);
 });
 
-/* ---------------- LOGIN ---------------- */
+/* -------------------- LOGIN -------------------- */
 app.post("/login", (req, res) => {
-    console.log("🔥 LOGIN HIT");
-    console.log("BODY:", req.body);
-
     const { username, password } = req.body;
 
     const query = `
@@ -53,15 +54,13 @@ app.post("/login", (req, res) => {
         WHERE username='${username}' AND password='${password}'
     `;
 
-    console.log("QUERY:", query);
+    console.log("🔥 QUERY:", query);
 
-    db.query(query, (err, results) => {
+    db.all(query, (err, results) => {
         if (err) {
-            console.log("DB ERROR:", err);
+            console.log("❌ DB ERROR:", err.message);
             return res.send("DB ERROR");
         }
-
-        console.log("RESULT:", results);
 
         if (results.length > 0) {
             res.send(`
@@ -69,12 +68,12 @@ app.post("/login", (req, res) => {
                 <pre>${JSON.stringify(results, null, 2)}</pre>
             `);
         } else {
-            res.send(`
-                <h3>Login Failed ❌</h3>
-                <pre>${JSON.stringify(results, null, 2)}</pre>
-            `);
+            res.send(`<h3>Login Failed ❌</h3>`);
         }
     });
 });
 
-app.listen(80, () => console.log("🚀 App running on port 80"));
+/* -------------------- START -------------------- */
+app.listen(80, () => {
+    console.log("🚀 App running on port 80");
+});
