@@ -57,9 +57,16 @@ const Leaderboard = () => {
                   </td>
                   <td className="user-cell">
                     <span className="username">{user.username}</span>
-                    {user.username === 'admin' && <span className="you-badge">YOU</span>}
+                    {user.username === localStorage.getItem('username') && <span className="you-badge">YOU</span>}
                   </td>
-                  <td className="points-cell">{user.points} PTS</td>
+                  <td className="points-cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                    <span>{user.total_score || user.score || 0} PTS</span>
+                    { (user.solved_count !== undefined) && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 'normal' }}>
+                        ({user.solved_count} {Number(user.solved_count) === 1 ? 'solve' : 'solves'})
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

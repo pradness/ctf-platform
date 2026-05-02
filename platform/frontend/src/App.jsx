@@ -4,7 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
-import Challenge from './pages/Challenge';
+import Submit from './pages/Submit';
 import { ToastProvider } from './components/Toast';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-            <Route path="/challenge/:id" element={<ProtectedRoute><Challenge /></ProtectedRoute>} />
+            <Route path="/submit" element={<ProtectedRoute><Submit /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

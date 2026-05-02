@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Terminal, Trophy, LogOut, Home } from 'lucide-react';
+import { Terminal, Trophy, LogOut, Home, User, ChevronDown } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showProfile, setShowProfile] = useState(false);
+  const username = localStorage.getItem('username') || 'OPERATIVE';
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
     navigate('/');
   };
 
@@ -34,10 +38,31 @@ const Navbar = () => {
               {label}
             </Link>
           ))}
-          <button onClick={handleLogout} className="btn-logout">
-            <LogOut size={18} />
-            Logout
-          </button>
+          
+          <div className="profile-container">
+            <button 
+              className={`nav-link profile-btn ${showProfile ? 'active' : ''}`}
+              onClick={() => setShowProfile(!showProfile)}
+            >
+              <User size={18} />
+              PROFILE
+              <ChevronDown size={14} className={`arrow-icon ${showProfile ? 'rotate' : ''}`} />
+            </button>
+            
+            {showProfile && (
+              <div className="glass-panel profile-dropdown animate-slide-down">
+                <div className="dropdown-user">
+                  <span className="text-dim text-xs">LOGGED_IN_AS:</span>
+                  <span className="username neon-text-blue">{username}</span>
+                </div>
+                <div className="dropdown-divider"></div>
+                <button onClick={handleLogout} className="dropdown-item logout-item">
+                  <LogOut size={16} />
+                  TERMINATE_SESSION
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>
