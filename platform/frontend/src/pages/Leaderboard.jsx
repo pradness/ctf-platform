@@ -46,7 +46,7 @@ const Leaderboard = () => {
               <tr>
                 <th>RANK</th>
                 <th>OPERATIVE</th>
-                <th>SCORE</th>
+                <th style={{ textAlign: 'right' }}>SCORE</th>
               </tr>
             </thead>
             <tbody>
