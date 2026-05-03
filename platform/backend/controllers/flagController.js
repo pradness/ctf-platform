@@ -1,109 +1,96 @@
 const pool = require("../config/db");
 
+const DEFAULT_POINTS = {
+  1: 50,
+  2: 75,
+  3: 100
+};
+
 exports.submitFlag = async (req, res) => {
-try {
-const { challengeId, flag } = req.body;
+  try {
+    const { challengeId, flag } = req.body;
 
-if (!challengeId || !flag) {
-return res.status(400).json({ message: "Missing challengeId or flag" });
-}
+    if (!challengeId || !flag) {
+      return res.status(400).json({ message: "Missing challengeId or flag" });
+    }
 
-const userId = req.user.id;
-const challengeIdNum = Number(challengeId);
-const cleanFlag = flag.trim();
+    const userId = req.user.id;
+    const challengeIdNum = Number(challengeId);
+    const cleanFlag = flag.trim();
+    const points = DEFAULT_POINTS[challengeIdNum] || 10;
 
-// Get challenge metadata (for points, etc)
-const challengeResult = await pool.query(
-"SELECT points FROM challenges WHERE id = $1",
-[challengeIdNum]
-);
+    // Check for a user-specific dynamic flag first (SQLi container challenge)
+    const userFlagResult = await pool.query(
+      "SELECT flag FROM user_flags WHERE user_id=$1 AND challenge_id=$2",
+      [userId, challengeIdNum]
+    );
 
-if (challengeResult.rows.length === 0) {
-return res.status(404).json({ message: "Challenge not found" });
-}
+    let isCorrect = false;
 
-const challenge = challengeResult.rows[0];
-const points = challenge.points || 10;
-
-let isCorrect = false;
-
-// 🔥 CHECK DYNAMIC FLAG (for SQLi)
-const userFlagResult = await pool.query(
-"SELECT flag FROM user_flags WHERE user_id=$1 AND challenge_id=$2",
-[userId, challengeIdNum]
-);
-
-if (userFlagResult.rows.length > 0) {
-const correctFlag = userFlagResult.rows[0].flag;
-if (cleanFlag === correctFlag.trim()) {
-isCorrect = true;
-}
+    if (userFlagResult.rows.length > 0) {
+      const correctFlag = userFlagResult.rows[0].flag;
+      isCorrect = cleanFlag === correctFlag.trim();
     } else {
-      // No user flag, so this challenge might have a static flag in the challenges table
+      // Static challenge fallback. If the DB has a flag column, use it; otherwise use code defaults.
       const staticFlagResult = await pool.query(
         "SELECT flag FROM challenges WHERE id = $1",
         [challengeIdNum]
       );
 
-      if (staticFlagResult.rows.length > 0 && staticFlagResult.rows[0].flag) {
-        const validFlags = staticFlagResult.rows[0].flag
-          .split(",")
-          .map(f => f.trim());
-        if (validFlags.includes(cleanFlag)) {
-          isCorrect = true;
-        }
-      }
+      const dbFlag = staticFlagResult.rows[0]?.flag;
+      const allowedFlags = dbFlag
+        ? dbFlag.split(",").map((value) => value.trim())
+        : challengeIdNum === 3
+          ? ["FLAG{friend1}", "FLAG{friend2}", "FLAG{friend3}"]
+          : [];
+
+      isCorrect = allowedFlags.includes(cleanFlag);
     }
 
-if (!isCorrect) {
-return res.json({ message: "Wrong flag ❌" });
-}
+    if (!isCorrect) {
+      return res.json({ message: "Wrong flag ❌" });
+    }
 
-// 🔥 Prevent SAME FLAG reuse
-const alreadySameFlag = await pool.query(
-"SELECT * FROM submissions WHERE user_id=$1 AND challenge_id=$2 AND flag=$3",
-[userId, challengeIdNum, cleanFlag]
-);
+    const alreadySameFlag = await pool.query(
+      "SELECT 1 FROM submissions WHERE user_id=$1 AND challenge_id=$2 AND flag=$3",
+      [userId, challengeIdNum, cleanFlag]
+    );
 
-if (alreadySameFlag.rows.length > 0) {
-return res.json({ message: "Already submitted this flag ⚠️" });
-}
+    if (alreadySameFlag.rows.length > 0) {
+      return res.json({ message: "Already submitted this flag ⚠️" });
+    }
 
-// 🔥 LIMIT: ONLY friend challenge can be submitted 3 times
-const FRIEND_CHALLENGE_ID = 3; // 🔴 change if needed
+    const MULTI_FLAG_CHALLENGES = [3];
 
-if (challengeIdNum !== FRIEND_CHALLENGE_ID) {
-// normal challenges → only 1 submission
-const alreadySolved = await pool.query(
-"SELECT * FROM submissions WHERE user_id=$1 AND challenge_id=$2",
-[userId, challengeIdNum]
-);
+    if (!MULTI_FLAG_CHALLENGES.includes(challengeIdNum)) {
+      const alreadySolved = await pool.query(
+        "SELECT 1 FROM submissions WHERE user_id=$1 AND challenge_id=$2",
+        [userId, challengeIdNum]
+      );
 
-if (alreadySolved.rows.length > 0) {
-return res.json({ message: "Already solved ⚠️" });
-}
-} else {
-// friend challenge → max 3 submissions
-const count = await pool.query(
-"SELECT COUNT(*) FROM submissions WHERE user_id=$1 AND challenge_id=$2",
-[userId, challengeIdNum]
-);
+      if (alreadySolved.rows.length > 0) {
+        return res.json({ message: "Already solved ⚠️" });
+      }
+    } else {
+      const count = await pool.query(
+        "SELECT COUNT(*) FROM submissions WHERE user_id=$1 AND challenge_id=$2",
+        [userId, challengeIdNum]
+      );
 
-if (parseInt(count.rows[0].count) >= 3) {
-return res.json({ message: "Max 3 flags allowed ⚠️" });
-}
-}
+      if (parseInt(count.rows[0].count, 10) >= 3) {
+        return res.json({ message: "Max 3 flags allowed ⚠️" });
+      }
+    }
 
     await pool.query(
       "INSERT INTO submissions (user_id, challenge_id, flag, points) VALUES ($1,$2,$3,$4)",
       [userId, challengeIdNum, cleanFlag, points]
     );
 
-return res.json({
-message: "Correct flag 🎉",
-points
-});
-
+    return res.json({
+      message: "Correct flag 🎉",
+      points
+    });
   } catch (err) {
     console.error("Flag submission error:", err);
     return res.status(500).json({ message: "Error submitting flag" });
