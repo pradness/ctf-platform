@@ -52,7 +52,7 @@ app.get("/", (req, res) => {
                     --text-main: #e8e8e8;
                     --text-dim: #8a8a8a;
                     --border-glow: rgba(0, 255, 65, 0.22);
-                    --font-main: 'Fira Code', monospace;
+                    --font-main: 'JetBrains Mono', monospace;
                     --font-title: 'Share Tech Mono', monospace;
                 }
 
@@ -118,6 +118,9 @@ app.get("/", (req, res) => {
                 .hero {
                     padding: 2rem;
                     border-bottom: 1px solid rgba(0,255,65,0.14);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
                 }
 
                 .terminal-badge {
@@ -142,7 +145,8 @@ app.get("/", (req, res) => {
                     color: #fff;
                     font-family: var(--font-title);
                     position: relative;
-                    display: inline-block;
+                    display: block;
+                    width: 100%;
                     text-shadow: 0 0 6px rgba(0, 255, 65, 0.18);
                     animation: title-static-flash 6s infinite steps(1, end);
                 }
@@ -471,7 +475,8 @@ app.post("/login", (req, res) => {
                             border: 1px solid rgba(0,255,65,0.16);
                             padding: 1rem;
                             color: var(--neon-cyan);
-                            border-radius: 0;
+                            display: block;
+                            width: 100%;
                         }
                         h2[data-glitch]::before,
                         h2[data-glitch]::after,
