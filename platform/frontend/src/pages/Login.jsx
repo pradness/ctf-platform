@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Terminal, Lock, User, ChevronRight } from 'lucide-react';
 import { authAPI } from '../services/api';
@@ -11,12 +11,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
-
-  useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate('/home');
-    }
-  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
