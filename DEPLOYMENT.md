@@ -99,15 +99,15 @@ curl http://localhost:3000/health
 ## Verification
 - [x] Backend health: `curl http://<EC2_IP>:3000/health`
 - [x] Frontend loads: `http://<EC2_IP>/`
-- [ ] Login works with credentials
-- [ ] Can view challenges and leaderboard
-- [ ] Can submit flags (if challenges deployed)
+- [x] Login works with credentials
+- [x] Can view challenges and leaderboard
+- [x] Can submit flags (if challenges deployed)
 
 ## Monitoring
-- [ ] Check Jenkins build logs for any failures
-- [ ] Monitor EC2 metrics in CloudWatch
-- [ ] Monitor RDS connections
-- [ ] Check application logs: `sudo docker logs ctf-platform`
+- [x] Check Jenkins build logs for any failures
+- [x] Monitor EC2 metrics in CloudWatch
+- [x] Monitor RDS connections
+- [x] Check application logs: `sudo docker logs ctf-platform`
 
 ## Troubleshooting Challenge Runtime
 
@@ -150,5 +150,3 @@ sudo docker run -d \
 - [ ] Stop EC2 and RDS when not in use
 - [ ] Use auto-scaling for production
 - [ ] Monitor ECR storage usage
-
-build trigger 1
