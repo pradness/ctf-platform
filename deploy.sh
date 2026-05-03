@@ -52,13 +52,13 @@ cd platform/frontend
 VITE_API_BASE_URL=http://${PUBLIC_IP}:3000 /usr/bin/npm run build
 
 echo ">>> Deploying frontend..."
-sudo rm -rf /var/www/html/*
-sudo cp -r dist/* /var/www/html/
-sudo chmod -R 755 /var/www/html/
-sudo chmod -R 644 /var/www/html/assets/*
+rm -rf /var/www/html/*
+cp -r dist/* /var/www/html/
+chmod -R 755 /var/www/html/
+chmod -R 644 /var/www/html/assets/*
 
 echo ">>> Restarting nginx..."
-sudo docker restart nginx-frontend
+docker restart nginx-frontend
 
 cd ../..
 
