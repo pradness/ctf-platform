@@ -4,6 +4,8 @@ set -e
 ECR_REGISTRY="353863292008.dkr.ecr.us-east-1.amazonaws.com"
 AWS_REGION="us-east-1"
 DB_HOST="ctf-postgres.cmv86oiq0o6f.us-east-1.rds.amazonaws.com"
+PUBLIC_IP=$(curl -s http://checkip.amazonaws.com | tr -d '\n')
+CHALLENGE_IMAGE="custom-sqli"
 
 echo ">>> Installing Docker..."
 sudo apt-get update -y
@@ -82,7 +84,11 @@ sudo docker run -d \
   --name ctf-platform \
   --restart unless-stopped \
   -p 3000:3000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --user 0:0 \
   -e PORT=3000 \
+  -e PUBLIC_IP=${PUBLIC_IP} \
+  -e CHALLENGE_IMAGE=${CHALLENGE_IMAGE} \
   -e DB_HOST=${DB_HOST} \
   -e DB_PORT=5432 \
   -e DB_NAME=ctfdb \
@@ -90,6 +96,13 @@ sudo docker run -d \
   -e DB_PASSWORD=ctfpassword123 \
   -e JWT_SECRET=supersecretkey123 \
   ${ECR_REGISTRY}/ctf-platform:${LATEST_TAG}
+
+if [ -d "platform/custom-sqli" ]; then
+  echo ">>> Building challenge image (${CHALLENGE_IMAGE})..."
+  sudo docker build -t ${CHALLENGE_IMAGE} ./platform/custom-sqli
+else
+  echo ">>> Skipping challenge image build (platform/custom-sqli not found)"
+fi
 
 sleep 5
 curl http://localhost:3000/health && echo ">>> Backend is up!" || echo ">>> Backend health check failed"
