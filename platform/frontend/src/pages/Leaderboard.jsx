@@ -35,7 +35,7 @@ const Leaderboard = () => {
             <Terminal size={14} />
             RANKING
           </div>
-          <h1 className="cyber-title lg">
+          <h1 className="cyber-title lg" data-glitch="GLOBAL_RANKINGS">
             <Target className="neon-text-blue" size={30} />
             GLOBAL_RANKINGS
           </h1>

@@ -25,7 +25,7 @@ const Navbar = () => {
         <div className="navbar-logo">
           <Terminal className="neon-text-green" size={28} />
           <div className="logo-copy">
-            <span className="logo-text">CTF<span className="neon-text-green">_PLATFORM</span></span>
+            <span className="logo-text" data-glitch="CTF_PLATFORM">CTF<span className="neon-text-green">_PLATFORM</span></span>
             <span className="logo-subtitle">terminal operations</span>
           </div>
         </div>

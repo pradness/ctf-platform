@@ -44,18 +44,20 @@ app.get("/", (req, res) => {
             <title>CTF SQLi Terminal</title>
             <style>
                 :root {
-                    --bg-dark: #050505;
-                    --bg-panel: rgba(10, 10, 10, 0.94);
+                    --bg-dark: #0a0a0a;
+                    --bg-panel: rgba(10, 10, 10, 0.96);
                     --neon-green: #00ff41;
-                    --neon-blue: #00e5ff;
+                    --neon-cyan: #00e5ff;
                     --neon-red: #ff003c;
                     --text-main: #e8e8e8;
                     --text-dim: #8a8a8a;
-                    --border-glow: rgba(0, 255, 65, 0.2);
+                    --border-glow: rgba(0, 255, 65, 0.22);
                     --font-main: 'Fira Code', monospace;
+                    --font-title: 'Share Tech Mono', monospace;
                 }
 
                 * { margin: 0; padding: 0; box-sizing: border-box; }
+                html { background: var(--bg-dark); }
                 body {
                     min-height: 100vh;
                     background-color: var(--bg-dark);
@@ -63,11 +65,12 @@ app.get("/", (req, res) => {
                     font-family: var(--font-main);
                     overflow-x: hidden;
                     background-image:
-                        radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.05), transparent 24%),
-                        radial-gradient(circle at 80% 30%, rgba(0, 229, 255, 0.04), transparent 22%),
+                        radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.06), transparent 24%),
+                        radial-gradient(circle at 80% 30%, rgba(0, 255, 65, 0.03), transparent 22%),
                         linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-                    background-size: auto, auto, 100% 3px, 3px 100%;
+                        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
+                        repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 4px);
+                    background-size: auto, auto, 100% 3px, 3px 100%, 100% 4px;
                     background-attachment: fixed;
                     display: flex;
                     align-items: center;
@@ -85,11 +88,20 @@ app.get("/", (req, res) => {
                     opacity: 0.35;
                 }
 
+                body::after {
+                    content: '';
+                    position: fixed;
+                    inset: 0;
+                    pointer-events: none;
+                    background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0, rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 3px);
+                    opacity: 0.7;
+                }
+
                 .shell {
                     width: 100%;
                     max-width: 880px;
                     background: var(--bg-panel);
-                    border: 1px solid rgba(255,255,255,0.08);
+                    border: 1px solid rgba(0,255,65,0.14);
                     box-shadow: 0 0 0 1px rgba(0, 255, 65, 0.08), 0 18px 50px rgba(0, 0, 0, 0.45);
                     position: relative;
                     overflow: hidden;
@@ -105,7 +117,7 @@ app.get("/", (req, res) => {
 
                 .hero {
                     padding: 2rem;
-                    border-bottom: 1px solid rgba(255,255,255,0.08);
+                    border-bottom: 1px solid rgba(0,255,65,0.14);
                 }
 
                 .terminal-badge {
@@ -119,14 +131,51 @@ app.get("/", (req, res) => {
                     letter-spacing: 0.18em;
                     text-transform: uppercase;
                     background: rgba(0, 255, 65, 0.04);
+                    border-radius: 0;
                 }
 
                 h1 {
                     margin-top: 1rem;
                     font-size: clamp(2rem, 4vw, 3rem);
                     text-transform: uppercase;
-                    letter-spacing: 0.16em;
+                    letter-spacing: 0.12em;
                     color: #fff;
+                    font-family: var(--font-title);
+                    position: relative;
+                    display: inline-block;
+                    text-shadow: 0 0 6px rgba(0, 255, 65, 0.18);
+                    animation: title-static-flash 6s infinite steps(1, end);
+                }
+
+                h1[data-glitch]::before,
+                h1[data-glitch]::after,
+                h2[data-glitch]::before,
+                h2[data-glitch]::after,
+                h3[data-glitch]::before,
+                h3[data-glitch]::after {
+                    content: attr(data-glitch);
+                    position: absolute;
+                    inset: 0;
+                    pointer-events: none;
+                    opacity: 0;
+                }
+
+                h1[data-glitch]::before,
+                h2[data-glitch]::before,
+                h3[data-glitch]::before {
+                    color: var(--neon-red);
+                    transform: translate(1px, 0);
+                    text-shadow: -1px 0 var(--neon-red);
+                    animation: glitch-red 4.8s infinite steps(1, end);
+                }
+
+                h1[data-glitch]::after,
+                h2[data-glitch]::after,
+                h3[data-glitch]::after {
+                    color: var(--neon-cyan);
+                    transform: translate(-1px, 0);
+                    text-shadow: 1px 0 var(--neon-cyan);
+                    animation: glitch-cyan 5.4s infinite steps(1, end);
                 }
 
                 p.sub {
@@ -145,11 +194,12 @@ app.get("/", (req, res) => {
                     align-items: center;
                     font-size: 0.82rem;
                     color: var(--text-main);
-                    background: rgba(0, 0, 0, 0.52);
-                    border: 1px solid rgba(255,255,255,0.08);
+                    background: rgba(0, 0, 0, 0.55);
+                    border: 1px solid rgba(0,255,65,0.16);
                     padding: 0.8rem 0.9rem;
                     margin-bottom: 1rem;
                     overflow-wrap: anywhere;
+                    border-radius: 0;
                 }
 
                 .prompt { color: var(--neon-green); }
@@ -159,11 +209,12 @@ app.get("/", (req, res) => {
                     justify-content: space-between;
                     gap: 1rem;
                     padding: 0.85rem 1rem;
-                    border: 1px solid rgba(255,255,255,0.08);
+                    border: 1px solid rgba(0,255,65,0.14);
                     background: rgba(0,0,0,0.55);
                     color: var(--text-dim);
                     font-size: 0.78rem;
                     margin-bottom: 1.5rem;
+                    border-radius: 0;
                 }
 
                 form {
@@ -174,7 +225,7 @@ app.get("/", (req, res) => {
                 .input {
                     width: 100%;
                     background: rgba(0, 0, 0, 0.62);
-                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    border: 1px solid rgba(0, 255, 65, 0.18);
                     border-radius: 0;
                     padding: 0.9rem 1rem;
                     color: white;
@@ -184,7 +235,7 @@ app.get("/", (req, res) => {
 
                 .input:focus {
                     border-color: var(--neon-green);
-                    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+                    box-shadow: 0 0 12px rgba(0, 255, 65, 0.18);
                 }
 
                 .actions {
@@ -208,6 +259,7 @@ app.get("/", (req, res) => {
 
                 button:hover {
                     background: rgba(0, 255, 65, 0.1);
+                    box-shadow: inset 0 0 15px rgba(0, 255, 65, 0.12), 0 0 12px rgba(0, 255, 65, 0.1);
                 }
 
                 .footer {
@@ -218,9 +270,47 @@ app.get("/", (req, res) => {
                 }
 
                 .footer code {
-                    color: var(--neon-blue);
+                    color: var(--neon-green);
                     background: rgba(255,255,255,0.05);
                     padding: 2px 6px;
+                    border-radius: 0;
+                }
+
+                @keyframes title-static-flash {
+                    0%, 100% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                    40% { text-shadow: 0 0 10px rgba(0, 255, 65, 0.28); }
+                    42% { text-shadow: 1px 0 0 var(--neon-red), -1px 0 0 var(--neon-cyan); }
+                    46% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                }
+
+                @keyframes glitch-red {
+                    0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                    8% { clip-path: inset(12% 0 70% 0); opacity: 0.9; }
+                    10% { clip-path: inset(70% 0 12% 0); opacity: 0.65; }
+                    14% { clip-path: inset(42% 0 38% 0); opacity: 0.85; }
+                    18% { clip-path: inset(0 0 0 0); opacity: 0; }
+                    52% { clip-path: inset(30% 0 52% 0); opacity: 0.75; }
+                    55% { clip-path: inset(5% 0 78% 0); opacity: 0.9; }
+                    58% { clip-path: inset(0 0 0 0); opacity: 0; }
+                }
+
+                @keyframes glitch-cyan {
+                    0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                    6% { clip-path: inset(65% 0 8% 0); opacity: 0.85; }
+                    9% { clip-path: inset(10% 0 72% 0); opacity: 0.7; }
+                    13% { clip-path: inset(35% 0 44% 0); opacity: 0.9; }
+                    16% { clip-path: inset(0 0 0 0); opacity: 0; }
+                    50% { clip-path: inset(54% 0 28% 0); opacity: 0.8; }
+                    53% { clip-path: inset(18% 0 60% 0); opacity: 0.95; }
+                    57% { clip-path: inset(0 0 0 0); opacity: 0; }
+                }
+
+                @keyframes title-hover-jitter {
+                    0% { transform: translate(0, 0); }
+                    25% { transform: translate(1px, -1px); }
+                    50% { transform: translate(-1px, 1px); }
+                    75% { transform: translate(1px, 0); }
+                    100% { transform: translate(0, 0); }
                 }
 
                 @media (max-width: 640px) {
@@ -233,7 +323,7 @@ app.get("/", (req, res) => {
             <main class="shell">
                 <section class="hero">
                     <div class="terminal-badge">ACCESS GATE</div>
-                    <h1>Login SQLi Challenge</h1>
+                    <h1 data-glitch="Login SQLi Challenge">Login SQLi Challenge</h1>
                     <p class="sub">Use the terminal-like form below to probe the authentication query. The goal is still the same: extract the hidden secret from the SQLite-backed lab.</p>
                 </section>
 
@@ -294,15 +384,18 @@ app.post("/login", (req, res) => {
                     <title>CTF SQLi Result</title>
                     <style>
                         :root {
-                            --bg-dark: #050505;
-                            --bg-panel: rgba(10, 10, 10, 0.94);
+                            --bg-dark: #0a0a0a;
+                            --bg-panel: rgba(10, 10, 10, 0.96);
                             --neon-green: #00ff41;
-                            --neon-blue: #00e5ff;
+                            --neon-cyan: #00e5ff;
+                            --neon-red: #ff003c;
                             --text-main: #e8e8e8;
                             --text-dim: #8a8a8a;
                             --font-main: 'Fira Code', monospace;
+                            --font-title: 'Share Tech Mono', monospace;
                         }
                         * { margin: 0; padding: 0; box-sizing: border-box; }
+                        html { background: var(--bg-dark); }
                         body {
                             min-height: 100vh;
                             background: var(--bg-dark);
@@ -312,16 +405,49 @@ app.post("/login", (req, res) => {
                             align-items: center;
                             justify-content: center;
                             padding: 2rem 1rem;
+                            background-image:
+                                radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.06), transparent 24%),
+                                radial-gradient(circle at 80% 30%, rgba(0, 255, 65, 0.03), transparent 22%),
+                                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
+                                repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 4px);
+                            background-size: auto, auto, 100% 3px, 3px 100%, 100% 4px;
+                        }
+                        body::before {
+                            content: '';
+                            position: fixed;
+                            inset: 0;
+                            pointer-events: none;
+                            background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent 12%, transparent 88%, rgba(255,255,255,0.04));
+                            mix-blend-mode: screen;
+                            opacity: 0.3;
+                        }
+                        body::after {
+                            content: '';
+                            position: fixed;
+                            inset: 0;
+                            pointer-events: none;
+                            background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0, rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 3px);
+                            opacity: 0.7;
                         }
                         .shell {
                             width: 100%;
                             max-width: 900px;
                             background: var(--bg-panel);
-                            border: 1px solid rgba(255,255,255,0.08);
+                            border: 1px solid rgba(0,255,65,0.14);
                             box-shadow: 0 0 0 1px rgba(0, 255, 65, 0.08), 0 18px 50px rgba(0, 0, 0, 0.45);
                             padding: 2rem;
                         }
-                        h2 { text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 0.75rem; }
+                        h2 {
+                            text-transform: uppercase;
+                            letter-spacing: 0.12em;
+                            margin-bottom: 0.75rem;
+                            font-family: var(--font-title);
+                            position: relative;
+                            display: inline-block;
+                            text-shadow: 0 0 6px rgba(0, 255, 65, 0.18);
+                            animation: title-static-flash 6s infinite steps(1, end);
+                        }
                         p { color: var(--text-dim); margin-bottom: 1.25rem; }
                         .ok { color: var(--neon-green); margin-bottom: 1rem; }
                         .mini-terminal {
@@ -330,26 +456,78 @@ app.post("/login", (req, res) => {
                             align-items: center;
                             font-size: 0.82rem;
                             color: var(--text-main);
-                            background: rgba(0, 0, 0, 0.52);
-                            border: 1px solid rgba(255,255,255,0.08);
+                            background: rgba(0, 0, 0, 0.55);
+                            border: 1px solid rgba(0,255,65,0.16);
                             padding: 0.8rem 0.9rem;
                             margin-bottom: 1rem;
                             overflow-wrap: anywhere;
+                            border-radius: 0;
                         }
                         .prompt { color: var(--neon-green); }
                         pre {
                             white-space: pre-wrap;
                             word-break: break-word;
                             background: rgba(0,0,0,0.55);
-                            border: 1px solid rgba(255,255,255,0.08);
+                            border: 1px solid rgba(0,255,65,0.16);
                             padding: 1rem;
-                            color: var(--neon-blue);
+                            color: var(--neon-cyan);
+                            border-radius: 0;
+                        }
+                        h2[data-glitch]::before,
+                        h2[data-glitch]::after,
+                        h3[data-glitch]::before,
+                        h3[data-glitch]::after {
+                            content: attr(data-glitch);
+                            position: absolute;
+                            inset: 0;
+                            pointer-events: none;
+                            opacity: 0;
+                        }
+                        h2[data-glitch]::before,
+                        h3[data-glitch]::before {
+                            color: var(--neon-red);
+                            transform: translate(1px, 0);
+                            text-shadow: -1px 0 var(--neon-red);
+                            animation: glitch-red 4.8s infinite steps(1, end);
+                        }
+                        h2[data-glitch]::after,
+                        h3[data-glitch]::after {
+                            color: var(--neon-cyan);
+                            transform: translate(-1px, 0);
+                            text-shadow: 1px 0 var(--neon-cyan);
+                            animation: glitch-cyan 5.4s infinite steps(1, end);
+                        }
+                        @keyframes title-static-flash {
+                            0%, 100% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                            40% { text-shadow: 0 0 10px rgba(0, 255, 65, 0.28); }
+                            42% { text-shadow: 1px 0 0 var(--neon-red), -1px 0 0 var(--neon-cyan); }
+                            46% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                        }
+                        @keyframes glitch-red {
+                            0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            8% { clip-path: inset(12% 0 70% 0); opacity: 0.9; }
+                            10% { clip-path: inset(70% 0 12% 0); opacity: 0.65; }
+                            14% { clip-path: inset(42% 0 38% 0); opacity: 0.85; }
+                            18% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            52% { clip-path: inset(30% 0 52% 0); opacity: 0.75; }
+                            55% { clip-path: inset(5% 0 78% 0); opacity: 0.9; }
+                            58% { clip-path: inset(0 0 0 0); opacity: 0; }
+                        }
+                        @keyframes glitch-cyan {
+                            0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            6% { clip-path: inset(65% 0 8% 0); opacity: 0.85; }
+                            9% { clip-path: inset(10% 0 72% 0); opacity: 0.7; }
+                            13% { clip-path: inset(35% 0 44% 0); opacity: 0.9; }
+                            16% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            50% { clip-path: inset(54% 0 28% 0); opacity: 0.8; }
+                            53% { clip-path: inset(18% 0 60% 0); opacity: 0.95; }
+                            57% { clip-path: inset(0 0 0 0); opacity: 0; }
                         }
                     </style>
                 </head>
                 <body>
                     <main class="shell">
-                        <h2>Login Successful</h2>
+                        <h2 data-glitch="Login Successful">Login Successful</h2>
                         <p class="ok">ACCESS GRANTED</p>
                         <div class="mini-terminal">
                             <span class="prompt">root@ctf:~#</span>
@@ -370,14 +548,18 @@ app.post("/login", (req, res) => {
                     <title>CTF SQLi Result</title>
                     <style>
                         :root {
-                            --bg-dark: #050505;
-                            --bg-panel: rgba(10, 10, 10, 0.94);
+                            --bg-dark: #0a0a0a;
+                            --bg-panel: rgba(10, 10, 10, 0.96);
                             --neon-red: #ff003c;
+                            --neon-green: #00ff41;
+                            --neon-cyan: #00e5ff;
                             --text-main: #e8e8e8;
                             --text-dim: #8a8a8a;
                             --font-main: 'Fira Code', monospace;
+                            --font-title: 'Share Tech Mono', monospace;
                         }
                         * { margin: 0; padding: 0; box-sizing: border-box; }
+                        html { background: var(--bg-dark); }
                         body {
                             min-height: 100vh;
                             background: var(--bg-dark);
@@ -387,22 +569,101 @@ app.post("/login", (req, res) => {
                             align-items: center;
                             justify-content: center;
                             padding: 2rem 1rem;
+                            background-image:
+                                radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.06), transparent 24%),
+                                radial-gradient(circle at 80% 30%, rgba(0, 255, 65, 0.03), transparent 22%),
+                                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
+                                repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 4px);
+                            background-size: auto, auto, 100% 3px, 3px 100%, 100% 4px;
+                        }
+                        body::before {
+                            content: '';
+                            position: fixed;
+                            inset: 0;
+                            pointer-events: none;
+                            background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent 12%, transparent 88%, rgba(255,255,255,0.04));
+                            mix-blend-mode: screen;
+                            opacity: 0.3;
+                        }
+                        body::after {
+                            content: '';
+                            position: fixed;
+                            inset: 0;
+                            pointer-events: none;
+                            background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0, rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 3px);
+                            opacity: 0.7;
                         }
                         .shell {
                             width: 100%;
                             max-width: 700px;
                             background: var(--bg-panel);
-                            border: 1px solid rgba(255,255,255,0.08);
+                            border: 1px solid rgba(0,255,65,0.14);
                             box-shadow: 0 0 0 1px rgba(255, 0, 60, 0.08), 0 18px 50px rgba(0, 0, 0, 0.45);
                             padding: 2rem;
                         }
-                        h3 { text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 0.75rem; color: var(--neon-red); }
+                        h3 {
+                            text-transform: uppercase;
+                            letter-spacing: 0.12em;
+                            margin-bottom: 0.75rem;
+                            color: var(--neon-red);
+                            font-family: var(--font-title);
+                            position: relative;
+                            display: inline-block;
+                            animation: title-static-flash 6s infinite steps(1, end);
+                        }
                         p { color: var(--text-dim); }
+                        @keyframes title-static-flash {
+                            0%, 100% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                            40% { text-shadow: 0 0 10px rgba(0, 255, 65, 0.28); }
+                            42% { text-shadow: 1px 0 0 var(--neon-red), -1px 0 0 var(--neon-cyan); }
+                            46% { text-shadow: 0 0 6px rgba(0, 255, 65, 0.18); }
+                        }
+                        h3[data-glitch]::before,
+                        h3[data-glitch]::after {
+                            content: attr(data-glitch);
+                            position: absolute;
+                            inset: 0;
+                            pointer-events: none;
+                            opacity: 0;
+                        }
+                        h3[data-glitch]::before {
+                            color: var(--neon-red);
+                            transform: translate(1px, 0);
+                            text-shadow: -1px 0 var(--neon-red);
+                            animation: glitch-red 4.8s infinite steps(1, end);
+                        }
+                        h3[data-glitch]::after {
+                            color: var(--neon-cyan);
+                            transform: translate(-1px, 0);
+                            text-shadow: 1px 0 var(--neon-cyan);
+                            animation: glitch-cyan 5.4s infinite steps(1, end);
+                        }
+                        @keyframes glitch-red {
+                            0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            8% { clip-path: inset(12% 0 70% 0); opacity: 0.9; }
+                            10% { clip-path: inset(70% 0 12% 0); opacity: 0.65; }
+                            14% { clip-path: inset(42% 0 38% 0); opacity: 0.85; }
+                            18% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            52% { clip-path: inset(30% 0 52% 0); opacity: 0.75; }
+                            55% { clip-path: inset(5% 0 78% 0); opacity: 0.9; }
+                            58% { clip-path: inset(0 0 0 0); opacity: 0; }
+                        }
+                        @keyframes glitch-cyan {
+                            0%, 100% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            6% { clip-path: inset(65% 0 8% 0); opacity: 0.85; }
+                            9% { clip-path: inset(10% 0 72% 0); opacity: 0.7; }
+                            13% { clip-path: inset(35% 0 44% 0); opacity: 0.9; }
+                            16% { clip-path: inset(0 0 0 0); opacity: 0; }
+                            50% { clip-path: inset(54% 0 28% 0); opacity: 0.8; }
+                            53% { clip-path: inset(18% 0 60% 0); opacity: 0.95; }
+                            57% { clip-path: inset(0 0 0 0); opacity: 0; }
+                        }
                     </style>
                 </head>
                 <body>
                     <main class="shell">
-                        <h3>Login Failed</h3>
+                        <h3 data-glitch="Login Failed">Login Failed</h3>
                         <p>ACCESS DENIED</p>
                     </main>
                 </body>

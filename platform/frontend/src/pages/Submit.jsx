@@ -51,7 +51,7 @@ const Submit = () => {
       <div className="glass-panel challenge-detail-panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
         <div className="challenge-header justify-center">
           <Terminal size={32} className="neon-text-green" />
-          <h1 className="cyber-title">SUBMIT FLAG</h1>
+          <h1 className="cyber-title" data-glitch="SUBMIT FLAG">SUBMIT FLAG</h1>
         </div>
 
         <div className="flag-submission-area mt-4">

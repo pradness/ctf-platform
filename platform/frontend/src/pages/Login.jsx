@@ -46,7 +46,7 @@ const Login = () => {
             ACCESS GATE
           </div>
           <Terminal size={42} className="neon-text-green mx-auto mt-4" />
-          <h1 className="cyber-title">CTF ENTER</h1>
+          <h1 className="cyber-title" data-glitch="CTF ENTER">CTF ENTER</h1>
           <p className="cyber-subtitle">
             {isLogin ? 'authenticate to reach the dashboard' : 'claim an account for the arena'}
           </p>

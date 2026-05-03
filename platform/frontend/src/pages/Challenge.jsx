@@ -56,7 +56,7 @@ const Challenge = () => {
       <div className="glass-panel challenge-detail-panel">
         <div className="challenge-header">
           <Terminal size={32} className="neon-text-blue" />
-          <h1 className="cyber-title">{challengeInfo.title}</h1>
+          <h1 className="cyber-title" data-glitch={challengeInfo.title}>{challengeInfo.title}</h1>
           <span className="points-badge large">{challengeInfo.points} PTS</span>
         </div>
 

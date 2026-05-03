@@ -63,7 +63,7 @@ const Home = () => {
             <Terminal size={14} />
             DASHBOARD
           </div>
-          <h1 className="cyber-title lg">CTF DASHBOARD</h1>
+          <h1 className="cyber-title lg" data-glitch="CTF DASHBOARD">CTF DASHBOARD</h1>
           <p className="cyber-subtitle">Launch targets, submit flags, and track progress from one shell.</p>
         </div>
         <div className="stats-panel glass-panel">
