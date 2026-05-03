@@ -6,6 +6,7 @@ AWS_REGION="us-east-1"
 DB_HOST="ctf-postgres.cmv86oiq0o6f.us-east-1.rds.amazonaws.com"
 IMAGE_TAG=$1
 PUBLIC_IP=$(curl -fs http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo localhost)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ -z "$IMAGE_TAG" ]; then
   echo "Usage: ./deploy.sh <image-tag>"
@@ -40,6 +41,14 @@ docker run -d \
   -e DB_PASSWORD=ctfpassword123 \
   -e JWT_SECRET=supersecretkey123 \
   ${ECR_REGISTRY}/ctf-platform:${IMAGE_TAG}
+
+echo ">>> Initializing RDS database schema..."
+docker run --rm \
+  -e PGPASSWORD=ctfpassword123 \
+  -e PGSSLMODE=require \
+  -v "${SCRIPT_DIR}/platform/backend/init.sql:/init.sql:ro" \
+  postgres:15 \
+  psql -h ${DB_HOST} -U ctfadmin -d ctfdb -f /init.sql
 
 echo ">>> Building custom-sqli challenge image (for backend to spawn)..."
 docker build -t custom-sqli ./platform/custom-sqli
