@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS submissions (
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Exact flag submissions table (prevents duplicate flag reuse)
+CREATE TABLE IF NOT EXISTS flag_submissions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    challenge_id INTEGER NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
+    submitted_flag VARCHAR(255) NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, challenge_id, submitted_flag)
+);
+
 -- Containers table (for tracking running challenge containers)
 CREATE TABLE IF NOT EXISTS containers (
     id SERIAL PRIMARY KEY,

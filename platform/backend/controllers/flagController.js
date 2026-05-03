@@ -6,6 +6,10 @@ const DEFAULT_POINTS = {
   3: 100
 };
 
+const STATIC_FLAGS = {
+  2: ["hackme{script_kidde}", "hackme{gud_ol_eval}", "hackme{find_da_exploit}"]
+};
+
 exports.submitFlag = async (req, res) => {
   try {
     const { challengeId, flag } = req.body;
@@ -27,23 +31,15 @@ exports.submitFlag = async (req, res) => {
 
     let isCorrect = false;
 
-    if (userFlagResult.rows.length > 0) {
+    if (challengeIdNum === 1) {
+      if (userFlagResult.rows.length === 0) {
+        return res.json({ message: "Wrong flag ❌" });
+      }
+
       const correctFlag = userFlagResult.rows[0].flag;
       isCorrect = cleanFlag === correctFlag.trim();
     } else {
-      // Static challenge fallback. If the DB has a flag column, use it; otherwise use code defaults.
-      const staticFlagResult = await pool.query(
-        "SELECT flag FROM challenges WHERE id = $1",
-        [challengeIdNum]
-      );
-
-      const dbFlag = staticFlagResult.rows[0]?.flag;
-      const allowedFlags = dbFlag
-        ? dbFlag.split(",").map((value) => value.trim())
-        : challengeIdNum === 3
-          ? ["FLAG{friend1}", "FLAG{friend2}", "FLAG{friend3}"]
-          : [];
-
+      const allowedFlags = STATIC_FLAGS[challengeIdNum] || [];
       isCorrect = allowedFlags.includes(cleanFlag);
     }
 
@@ -51,16 +47,16 @@ exports.submitFlag = async (req, res) => {
       return res.json({ message: "Wrong flag ❌" });
     }
 
-    const alreadySameFlag = await pool.query(
-      "SELECT 1 FROM submissions WHERE user_id=$1 AND challenge_id=$2 AND flag=$3",
+    const alreadySubmittedFlag = await pool.query(
+      "SELECT 1 FROM flag_submissions WHERE user_id=$1 AND challenge_id=$2 AND submitted_flag=$3",
       [userId, challengeIdNum, cleanFlag]
     );
 
-    if (alreadySameFlag.rows.length > 0) {
+    if (alreadySubmittedFlag.rows.length > 0) {
       return res.json({ message: "Already submitted this flag ⚠️" });
     }
 
-    const MULTI_FLAG_CHALLENGES = [3];
+    const MULTI_FLAG_CHALLENGES = [2, 3];
 
     if (!MULTI_FLAG_CHALLENGES.includes(challengeIdNum)) {
       const alreadySolved = await pool.query(
@@ -83,8 +79,13 @@ exports.submitFlag = async (req, res) => {
     }
 
     await pool.query(
-      "INSERT INTO submissions (user_id, challenge_id, flag, points) VALUES ($1,$2,$3,$4)",
-      [userId, challengeIdNum, cleanFlag, points]
+      "INSERT INTO flag_submissions (user_id, challenge_id, submitted_flag) VALUES ($1,$2,$3)",
+      [userId, challengeIdNum, cleanFlag]
+    );
+
+    await pool.query(
+      "INSERT INTO submissions (user_id, challenge_id, points) VALUES ($1,$2,$3)",
+      [userId, challengeIdNum, points]
     );
 
     return res.json({
