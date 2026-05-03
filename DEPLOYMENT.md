@@ -64,7 +64,10 @@ sudo docker run -d \
   --name ctf-platform \
   --restart unless-stopped \
   -p 3000:3000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e PORT=3000 \
+  -e PUBLIC_IP=<EC2_PUBLIC_IP> \
+  -e CHALLENGE_IMAGE=custom-sqli \
   -e JWT_SECRET=$(openssl rand -hex 32) \
   -e DB_HOST=${RDS_ENDPOINT} \
   -e DB_PORT=5432 \
@@ -72,6 +75,9 @@ sudo docker run -d \
   -e DB_USER=ctfadmin \
   -e DB_PASSWORD=ctfpassword123 \
   353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:${LATEST_TAG}
+
+# Build SQLi challenge image once on EC2 host (or pull from your registry)
+sudo docker build -t custom-sqli ./platform/custom-sqli
 
 # Initialize database (first time only)
 sudo docker exec ctf-platform psql -h ${RDS_ENDPOINT} -U ctfadmin -d ctfdb -f init.sql

@@ -83,9 +83,18 @@ exports.startChallenge = async (req, res) => {
 
     } catch (err) {
         console.error("Start error:", err);
+
+        const errorMessage = err.stderr || err.message || "Internal server error";
+        if (errorMessage.includes("docker: not found")) {
+            return res.status(503).json({
+                error: "Docker runtime unavailable",
+                message: "Challenge runtime is not configured on server. Ensure Docker CLI is installed and /var/run/docker.sock is mounted into backend service."
+            });
+        }
+
         res.status(500).json({
             error: "Internal server error",
-            message: err.stderr || err.message
+            message: errorMessage
         });
     }
 };
