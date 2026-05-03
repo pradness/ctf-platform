@@ -48,8 +48,8 @@ docker run -d \
 
 echo ">>> Building frontend..."
 cd platform/frontend
-npm install --silent
-VITE_API_BASE_URL=http://${PUBLIC_IP}:3000 npm run build
+/usr/bin/npm install --silent
+VITE_API_BASE_URL=http://${PUBLIC_IP}:3000 /usr/bin/npm run build
 
 echo ">>> Deploying frontend..."
 sudo rm -rf /var/www/html/*
