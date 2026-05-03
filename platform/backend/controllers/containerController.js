@@ -9,10 +9,16 @@ const execAsync = util.promisify(exec);
 exports.startChallenge = async (req, res) => {
     try {
         const userId = req.user.id;
-        const challengeId = 1;
+        const challengeId = Number(req.body?.challengeId || 1);
+
+        if (!Number.isInteger(challengeId) || challengeId <= 0) {
+            return res.status(400).json({ message: "Invalid challenge id" });
+        }
+
+        const imageName = process.env.CHALLENGE_IMAGE || "custom-sqli";
 
         const existing = await pool.query(
-            "SELECT * FROM containers WHERE user_id=$1",
+            "SELECT * FROM containers WHERE user_id=$1 AND expires_at > NOW()",
             [userId]
         );
 
@@ -22,24 +28,42 @@ exports.startChallenge = async (req, res) => {
             });
         }
 
-        const randomPort = Math.floor(4000 + Math.random() * 1000);
+        // Clear stale rows so old container records don't block challenge start.
+        await pool.query(
+            "DELETE FROM containers WHERE user_id=$1 AND expires_at <= NOW()",
+            [userId]
+        );
 
         const flag = `FLAG{${userId}_${crypto.randomBytes(4).toString("hex")}}`;
         console.log("Generated flag:", flag);
 
-        // store flag in backend DB
+        // Upsert the per-user challenge flag to avoid UNIQUE(user_id, challenge_id) violations.
         await pool.query(
-            "INSERT INTO user_flags (user_id, challenge_id, flag) VALUES ($1,$2,$3)",
+            `INSERT INTO user_flags (user_id, challenge_id, flag)
+             VALUES ($1,$2,$3)
+             ON CONFLICT (user_id, challenge_id)
+             DO UPDATE SET flag = EXCLUDED.flag, created_at = CURRENT_TIMESTAMP`,
             [userId, challengeId, flag]
         );
 
         /* -------------------- START CONTAINER -------------------- */
         const { stdout } = await execAsync(
-            `docker run -d -p ${randomPort}:80 -e FLAG="${flag}" custom-sqli`
+            `docker run -d -P -e FLAG="${flag}" ${imageName}`
         );
 
         const containerId = stdout.trim();
         console.log("Container started:", containerId);
+
+        const { stdout: portInfo } = await execAsync(
+            `docker port ${containerId} 80/tcp`
+        );
+
+        const match = portInfo.trim().match(/:(\d+)$/);
+        if (!match) {
+            throw new Error(`Could not determine mapped port for container ${containerId}`);
+        }
+
+        const mappedPort = Number(match[1]);
 
         console.log("✅ SQLite challenge ready");
 
@@ -47,19 +71,22 @@ exports.startChallenge = async (req, res) => {
 
         await pool.query(
             "INSERT INTO containers (user_id, container_id, port, expires_at) VALUES ($1,$2,$3,$4)",
-            [userId, containerId, randomPort, expiresAt]
+            [userId, containerId, mappedPort, expiresAt]
         );
 
         res.json({
             message: "Challenge started",
-            url: `http://${process.env.PUBLIC_IP}:${randomPort}`,
+            url: `http://${process.env.PUBLIC_IP}:${mappedPort}`,
             containerId,
             expiresAt
         });
 
     } catch (err) {
         console.error("Start error:", err);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({
+            error: "Internal server error",
+            message: err.stderr || err.message
+        });
     }
 };
 
