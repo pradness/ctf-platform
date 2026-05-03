@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, Lock, User, ChevronRight } from 'lucide-react';
+import { Terminal, Lock, User, ChevronRight, Shield } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 
@@ -15,7 +15,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (isLogin) {
         const res = await authAPI.login(username, password);
@@ -26,8 +26,8 @@ const Login = () => {
       } else {
         const res = await authAPI.signup(username, password);
         addToast(res.message || 'Signup successful. Please login.', 'success');
-        setIsLogin(true); // switch to login mode
-        setPassword(''); // clear password field
+        setIsLogin(true);
+        setPassword('');
       }
     } catch (err) {
       addToast(err.response?.data?.message || err.message, 'error');
@@ -39,13 +39,22 @@ const Login = () => {
   return (
     <div className="login-wrapper">
       <div className="matrix-bg"></div>
-      <div className="glass-panel login-panel">
+      <div className="glass-panel login-panel terminal-card">
         <div className="login-header">
-          <Terminal size={48} className="neon-text-green mb-4 mx-auto" />
-          <h1 className="cyber-title">{isLogin ? 'SYSTEM_LOGIN' : 'NEW_OPERATIVE'}</h1>
+          <div className="terminal-badge">
+            <Shield size={14} />
+            ACCESS GATE
+          </div>
+          <Terminal size={42} className="neon-text-green mx-auto mt-4" />
+          <h1 className="cyber-title">CTF ENTER</h1>
           <p className="cyber-subtitle">
-            {isLogin ? 'Enter credentials to access mainframe' : 'Register for CTF access'}
+            {isLogin ? 'authenticate to reach the dashboard' : 'claim an account for the arena'}
           </p>
+        </div>
+
+        <div className="terminal-strip">
+          <span>root@ctf:~#</span>
+          <span>session ready</span>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -60,7 +69,7 @@ const Login = () => {
               required
             />
           </div>
-          
+
           <div className="input-group">
             <Lock className="input-icon" size={20} />
             <input
@@ -74,26 +83,26 @@ const Login = () => {
           </div>
 
           <button type="submit" className="cyber-btn primary-btn w-full mt-4" disabled={isLoading}>
-            {isLoading ? <span className="loading-pulse">AUTHENTICATING...</span> : (
+            {isLoading ? <span className="loading-pulse">PROCESSING...</span> : (
               <>
                 {isLogin ? 'INITIALIZE_SESSION' : 'REGISTER_ACCOUNT'} <ChevronRight size={18} />
               </>
             )}
           </button>
         </form>
-        
+
         <div className="login-footer">
           <p>
-            {isLogin ? "Don't have an account? " : "Already registered? "}
-            <span 
-              className="neon-text-blue" 
-              style={{cursor: 'pointer', textDecoration: 'underline'}} 
+            {isLogin ? 'No account yet? ' : 'Already registered? '}
+            <span
+              className="neon-text-blue"
+              style={{ cursor: 'pointer', textDecoration: 'underline' }}
               onClick={() => {
                 setIsLogin(!isLogin);
                 setPassword('');
               }}
             >
-              {isLogin ? "Sign up" : "Login"}
+              {isLogin ? 'Switch to signup' : 'Switch to login'}
             </span>
           </p>
         </div>

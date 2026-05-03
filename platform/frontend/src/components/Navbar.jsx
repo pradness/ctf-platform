@@ -24,7 +24,10 @@ const Navbar = () => {
       <div className="navbar-container">
         <div className="navbar-logo">
           <Terminal className="neon-text-green" size={28} />
-          <span className="logo-text">CTF<span className="neon-text-green">_PLATFORM</span></span>
+          <div className="logo-copy">
+            <span className="logo-text">CTF<span className="neon-text-green">_PLATFORM</span></span>
+            <span className="logo-subtitle">terminal operations</span>
+          </div>
         </div>
         
         <div className="navbar-links">
@@ -45,7 +48,7 @@ const Navbar = () => {
               onClick={() => setShowProfile(!showProfile)}
             >
               <User size={18} />
-              PROFILE
+              {username}
               <ChevronDown size={14} className={`arrow-icon ${showProfile ? 'rotate' : ''}`} />
             </button>
             
@@ -58,7 +61,7 @@ const Navbar = () => {
                 <div className="dropdown-divider"></div>
                 <button onClick={handleLogout} className="dropdown-item logout-item">
                   <LogOut size={16} />
-                  TERMINATE_SESSION
+                  LOGOUT
                 </button>
               </div>
             )}

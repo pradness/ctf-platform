@@ -56,6 +56,10 @@ const Submit = () => {
 
         <div className="flag-submission-area mt-4">
           <p className="submit-desc text-center mb-6">Submit the flag you extracted from the target environment.</p>
+          <div className="mini-terminal url-terminal">
+            <span className="prompt">root@ctf:~#</span>
+            <span>verify submitted flag against the database</span>
+          </div>
           <form onSubmit={handleSubmit} className="flag-form" style={{ flexDirection: 'column' }}>
             <div className="input-group w-full" style={{ marginBottom: '1.5rem' }}>
               <Flag className="input-icon" size={20} />

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Cpu, Play, StopCircle, Flag } from 'lucide-react';
+import { ShieldAlert, Cpu, Play, StopCircle, Flag, Terminal, Box, ArrowUpRight } from 'lucide-react';
 import { containerAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 
@@ -15,27 +15,25 @@ const Home = () => {
     setIsStarting(true);
     try {
       const res = await containerAPI.start(challengeId);
-      
+
       setActiveContainer({
         id: res.containerId,
         url: res.url,
         expiresAt: res.expiresAt,
-        challengeId
+        challengeId,
       });
-      
+
       addToast(res.message || 'Challenge started successfully', 'success');
-      
-      // Open the challenge target in a new tab.
+
       if (res.url) {
-        window.open(res.url, "_blank");
+        window.open(res.url, '_blank');
       }
-      
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message;
-      if (errorMsg.includes("active container")) {
-        addToast("You already have an active container running!", "error");
+      if (errorMsg.includes('active container')) {
+        addToast('You already have an active container running!', 'error');
       } else {
-        addToast(errorMsg, "error");
+        addToast(errorMsg, 'error');
       }
     } finally {
       setIsStarting(false);
@@ -44,7 +42,7 @@ const Home = () => {
 
   const handleStopChallenge = async () => {
     if (!activeContainer) return;
-    
+
     setIsStopping(true);
     try {
       await containerAPI.stop(activeContainer.id);
@@ -60,31 +58,46 @@ const Home = () => {
   return (
     <div className="page-container animate-fade-in">
       <header className="page-header">
-        <h1 className="cyber-title lg">CTF Dashboard</h1>
+        <div>
+          <div className="terminal-badge mb-4">
+            <Terminal size={14} />
+            DASHBOARD
+          </div>
+          <h1 className="cyber-title lg">CTF DASHBOARD</h1>
+          <p className="cyber-subtitle">Launch targets, submit flags, and track progress from one shell.</p>
+        </div>
         <div className="stats-panel glass-panel">
           <div className="stat-item">
             <span className="stat-label">STATUS:</span>
             <span className="stat-value neon-text-blue">ONLINE</span>
           </div>
+          <div className="stat-item">
+            <span className="stat-label">MODE:</span>
+            <span className="stat-value neon-text-green">CONTEST</span>
+          </div>
         </div>
       </header>
 
       <div className="challenges-grid">
-        
-        {/* SQL INJECTION CHALLENGE CARD */}
         <div className="glass-panel challenge-card available">
           <div className="card-header">
-            <h2 className="challenge-title">SQL Injection Challenge</h2>
+            <div>
+              <p className="card-kicker">TARGET 01</p>
+              <h2 className="challenge-title">SQL Injection Challenge</h2>
+            </div>
             <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
           </div>
-          
+
           <p className="challenge-desc">
-            Exploit SQL Injection vulnerability to retrieve the flag. A dedicated vulnerable login target will open in a new tab.
+            Exploit the login flow, extract the hidden flag, and submit it from the terminal panel.
           </p>
-          
-          <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            
-            <button 
+
+          <div className="mini-terminal">
+            <span className="prompt">root@ctf:~#</span> start target --sqli
+          </div>
+
+          <div className="card-footer">
+            <button
               onClick={() => handleStartChallenge(1)}
               className="cyber-btn primary-btn"
               disabled={isStarting}
@@ -92,27 +105,27 @@ const Home = () => {
               {isStarting ? <Cpu className="spin" size={18} /> : <Play size={18} />}
               {isStarting ? 'INITIALIZING...' : 'START CHALLENGE'}
             </button>
-            
+
             {activeContainer?.challengeId === 1 && (
-              <button 
-                onClick={() => window.open(activeContainer.url, "_blank")}
+              <button
+                onClick={() => window.open(activeContainer.url, '_blank')}
                 className="cyber-btn secondary-btn"
               >
+                <ArrowUpRight size={18} />
                 OPEN TARGET
               </button>
             )}
 
-            <button 
+            <button
               onClick={() => navigate('/submit/1')}
               className="cyber-btn secondary-btn"
-              style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
             >
               <Flag size={18} />
               SUBMIT FLAG
             </button>
 
             {activeContainer?.challengeId === 1 && (
-              <button 
+              <button
                 onClick={handleStopChallenge}
                 className="cyber-btn"
                 style={{ borderColor: 'var(--neon-red)', color: 'var(--neon-red)', marginLeft: 'auto' }}
@@ -122,45 +135,44 @@ const Home = () => {
                 STOP
               </button>
             )}
-            
           </div>
-          
-          <div className="card-glitch-layer"></div>
         </div>
 
-        {/* FRIEND'S CHALLENGE CARD */}
         <div className="glass-panel challenge-card available">
           <div className="card-header">
-            <h2 className="challenge-title">CTF Box</h2>
+            <div>
+              <p className="card-kicker">TARGET 02</p>
+              <h2 className="challenge-title">CTF Box</h2>
+            </div>
             <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
           </div>
-          
+
           <p className="challenge-desc">
-            Multi-flag challenge. Externally hosted platform. Find the hidden flags.
+            Multi-flag challenge. Open the box, explore the host, and harvest every hidden flag.
           </p>
-          
-          <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            
-            <button 
-              onClick={() => window.open("http://16.16.253.244/", "_blank")}
+
+          <div className="mini-terminal">
+            <span className="prompt">root@ctf:~#</span> ssh lab@external-box
+          </div>
+
+          <div className="card-footer">
+            <button
+              onClick={() => window.open('http://16.16.253.244/', '_blank')}
               className="cyber-btn primary-btn"
             >
-              <Play size={18} />
+              <Box size={18} />
               START CHALLENGE
             </button>
-            
-            <button 
+
+            <button
               onClick={() => navigate('/submit/2')}
               className="cyber-btn secondary-btn"
-              style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
             >
               <Flag size={18} />
               SUBMIT FLAG
             </button>
           </div>
-          <div className="card-glitch-layer"></div>
         </div>
-        
       </div>
     </div>
   );

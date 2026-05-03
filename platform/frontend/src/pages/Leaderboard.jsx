@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Medal, Target } from 'lucide-react';
+import { Trophy, Medal, Target, Terminal } from 'lucide-react';
 import { leaderboardAPI } from '../services/api';
 
 const Leaderboard = () => {
@@ -12,7 +12,7 @@ const Leaderboard = () => {
         const dbData = await leaderboardAPI.getLeaderboard();
         setLeaderboard(dbData);
       } catch (error) {
-        console.error("Failed to load leaderboard");
+        console.error('Failed to load leaderboard');
       } finally {
         setLoading(false);
       }
@@ -29,12 +29,24 @@ const Leaderboard = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      <header className="page-header text-center w-full block mb-8">
-        <h1 className="cyber-title lg justify-center flex items-center gap-3">
-          <Target className="neon-text-blue" size={32} />
-          GLOBAL_RANKINGS
-        </h1>
-        <p className="cyber-subtitle mt-2 text-dim">Top performers in the current cycle</p>
+      <header className="page-header leaderboard-header">
+        <div>
+          <div className="terminal-badge mb-4">
+            <Terminal size={14} />
+            RANKING
+          </div>
+          <h1 className="cyber-title lg">
+            <Target className="neon-text-blue" size={30} />
+            GLOBAL_RANKINGS
+          </h1>
+          <p className="cyber-subtitle">Top performers in the current cycle.</p>
+        </div>
+        <div className="stats-panel glass-panel leaderboard-stats">
+          <div className="stat-item">
+            <span className="stat-label">BOARD:</span>
+            <span className="stat-value neon-text-green">LIVE</span>
+          </div>
+        </div>
       </header>
 
       <div className="glass-panel leaderboard-panel">
@@ -62,7 +74,7 @@ const Leaderboard = () => {
                   <td className="points-cell">
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                       <span className="score-value">{user.total_score || user.score || user.points || 0} PTS</span>
-                      { user.solved_count !== undefined && (
+                      {user.solved_count !== undefined && (
                         <span className="solved-count" style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 'normal' }}>
                           ({user.solved_count} {Number(user.solved_count) === 1 ? 'solve' : 'solves'})
                         </span>

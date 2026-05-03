@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Terminal, Flag, ArrowLeft } from 'lucide-react';
+import { Terminal, Flag, ArrowLeft, ExternalLink } from 'lucide-react';
 import { challengesAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 
@@ -27,13 +27,13 @@ const Challenge = () => {
     try {
       const res = await challengesAPI.submitFlag(id, flag);
       addToast(res.message, 'success');
-      
+
       const solved = JSON.parse(localStorage.getItem('solvedChallenges') || '[]');
       if (!solved.includes(id)) {
         solved.push(id);
         localStorage.setItem('solvedChallenges', JSON.stringify(solved));
       }
-      
+
       setFlag('');
       setTimeout(() => navigate('/home'), 1500);
     } catch (err) {
@@ -82,12 +82,17 @@ const Challenge = () => {
           <div className="flag-submission-area">
             <h3 className="submit-title">Open Lab</h3>
             <p className="submit-desc">This challenge runs as a standalone app. Open it and solve it directly.</p>
+            <div className="mini-terminal url-terminal">
+              <span className="prompt">root@ctf:~#</span>
+              <span>{challengeInfo.url}</span>
+            </div>
             <a
               href={challengeInfo.url}
               target="_blank"
               rel="noreferrer"
               className="cyber-btn primary-btn inline-flex items-center justify-center"
             >
+              <ExternalLink size={18} />
               Launch Custom SQLi
             </a>
           </div>
