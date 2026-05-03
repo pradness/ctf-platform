@@ -14,9 +14,9 @@ exports.getLeaderboard = async (req, res) => {
         `);
 
         const leaderboard = result.rows.map((row, index) => ({
-            rank: index + 1,
+            rank: row.rank || index + 1,
             username: row.username,
-            points: row.points
+            score: row.score
         }));
 
         res.json(leaderboard);

@@ -150,7 +150,7 @@ const Home = () => {
             </button>
             
             <button 
-              onClick={() => navigate('/submit/3')}
+              onClick={() => navigate('/submit/2')}
               className="cyber-btn secondary-btn"
               style={{ borderColor: 'var(--neon-green)', color: 'var(--neon-green)' }}
             >
