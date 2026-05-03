@@ -103,8 +103,4 @@ curl http://localhost:3000/health
 - [ ] Use auto-scaling for production
 - [ ] Monitor ECR storage usage
 
-some more text
-testinggg
-testinggg2
-testinggg3
-testinggg4
+build trigger 1
