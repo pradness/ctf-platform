@@ -43,12 +43,11 @@ docker run -d \
   ${ECR_REGISTRY}/ctf-platform:${IMAGE_TAG}
 
 echo ">>> Initializing RDS database schema..."
-docker run --rm \
+docker run --rm -i \
   -e PGPASSWORD=ctfpassword123 \
   -e PGSSLMODE=require \
-  -v "${SCRIPT_DIR}/platform/backend/init.sql:/init.sql:ro" \
   postgres:15 \
-  psql -h ${DB_HOST} -U ctfadmin -d ctfdb -f /init.sql
+  psql -h ${DB_HOST} -U ctfadmin -d ctfdb < "${SCRIPT_DIR}/platform/backend/init.sql"
 
 echo ">>> Building custom-sqli challenge image (for backend to spawn)..."
 docker build -t custom-sqli ./platform/custom-sqli
