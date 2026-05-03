@@ -5,6 +5,6 @@ services:
     build: .
     container_name: sqli-app
     ports:
-      - "8080:80"
+      - "4000:80"
     environment:
       FLAG: ${FLAG:-FLAG{default}}

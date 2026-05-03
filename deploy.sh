@@ -27,7 +27,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   -e PORT=3000 \
-  -e CUSTOM_SQLI_URL=http://${PUBLIC_IP}:8080 \
+  -e CUSTOM_SQLI_URL=http://${PUBLIC_IP}:4000 \
   -e DB_HOST=${DB_HOST} \
   -e DB_PORT=5432 \
   -e DB_NAME=ctfdb \
@@ -42,7 +42,7 @@ docker rm -f ctf-custom-sqli || true
 docker run -d \
   --name ctf-custom-sqli \
   --restart unless-stopped \
-  -p 8080:80 \
+  -p 4000:80 \
   -e FLAG='FLAG{custom_sqli}' \
   ctf-custom-sqli
 
