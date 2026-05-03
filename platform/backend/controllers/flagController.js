@@ -12,9 +12,9 @@ const userId = req.user.id;
 const challengeIdNum = Number(challengeId);
 const cleanFlag = flag.trim();
 
-// 🔹 Get challenge
+// Get challenge metadata (for points, etc)
 const challengeResult = await pool.query(
-"SELECT flag, points FROM challenges WHERE id = $1",
+"SELECT points FROM challenges WHERE id = $1",
 [challengeIdNum]
 );
 
@@ -23,6 +23,7 @@ return res.status(404).json({ message: "Challenge not found" });
 }
 
 const challenge = challengeResult.rows[0];
+const points = challenge.points || 10;
 
 let isCorrect = false;
 
@@ -37,16 +38,22 @@ const correctFlag = userFlagResult.rows[0].flag;
 if (cleanFlag === correctFlag.trim()) {
 isCorrect = true;
 }
-} else {
-// 🔥 STATIC MULTI-FLAG (friend challenge)
-const validFlags = challenge.flag
-? challenge.flag.split(",").map(f => f.trim())
-: [];
+    } else {
+      // No user flag, so this challenge might have a static flag in the challenges table
+      const staticFlagResult = await pool.query(
+        "SELECT flag FROM challenges WHERE id = $1",
+        [challengeIdNum]
+      );
 
-if (validFlags.includes(cleanFlag)) {
-isCorrect = true;
-}
-}
+      if (staticFlagResult.rows.length > 0 && staticFlagResult.rows[0].flag) {
+        const validFlags = staticFlagResult.rows[0].flag
+          .split(",")
+          .map(f => f.trim());
+        if (validFlags.includes(cleanFlag)) {
+          isCorrect = true;
+        }
+      }
+    }
 
 if (!isCorrect) {
 return res.json({ message: "Wrong flag ❌" });
@@ -87,20 +94,18 @@ return res.json({ message: "Max 3 flags allowed ⚠️" });
 }
 }
 
-const points = challenge.points || 10;
-
-await pool.query(
-"INSERT INTO submissions (user_id, challenge_id, points, flag) VALUES ($1,$2,$3,$4)",
-[userId, challengeIdNum, points, cleanFlag]
-);
+    await pool.query(
+      "INSERT INTO submissions (user_id, challenge_id, flag, points) VALUES ($1,$2,$3,$4)",
+      [userId, challengeIdNum, cleanFlag, points]
+    );
 
 return res.json({
 message: "Correct flag 🎉",
 points
 });
 
-} catch (err) {
-console.error(err);
-return res.status(500).json({ message: "Error submitting flag" });
-}
+  } catch (err) {
+    console.error("Flag submission error:", err);
+    return res.status(500).json({ message: "Error submitting flag" });
+  }
 };

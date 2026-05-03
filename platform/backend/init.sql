@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS challenges (
     description TEXT,
     difficulty VARCHAR(50),
     url VARCHAR(255),
+    flag VARCHAR(500),
+    points INTEGER DEFAULT 10,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -33,6 +35,7 @@ CREATE TABLE IF NOT EXISTS submissions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     challenge_id INTEGER NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
+    flag VARCHAR(255),
     points INTEGER DEFAULT 0,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,10 +51,10 @@ CREATE TABLE IF NOT EXISTS containers (
 );
 
 -- Insert sample challenges
-INSERT INTO challenges (name, description, difficulty) VALUES
-    ('SQL Injection', 'Find the hidden flag using SQL Injection techniques.', 'easy'),
-    ('XSS', 'Exploit Cross-Site Scripting vulnerabilities.', 'medium'),
-    ('Broken Auth', 'Bypass authentication mechanisms.', 'hard')
+INSERT INTO challenges (name, description, difficulty, points) VALUES
+    ('SQL Injection', 'Find the hidden flag using SQL Injection techniques.', 'easy', 50),
+    ('XSS', 'Exploit Cross-Site Scripting vulnerabilities.', 'medium', 75),
+    ('Broken Auth', 'Bypass authentication mechanisms.', 'hard', 100)
 ON CONFLICT DO NOTHING;
 
 -- Insert sample user (password: admin123)
