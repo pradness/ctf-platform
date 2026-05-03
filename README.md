@@ -238,14 +238,12 @@ sudo docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
    -v /var/run/docker.sock:/var/run/docker.sock \
+  --user 0:0 \
   -e PORT=3000 \
-   -e PUBLIC_IP=<EC2_PUBLIC_IP> \
-   -e CHALLENGE_IMAGE=custom-sqli \
-  -e JWT_SECRET=your-secret-key \
-  -e DB_HOST=<RDS_ENDPOINT_HOSTNAME_ONLY> \
-  -e DB_PORT=5432 \
-  -e DB_NAME=ctfdb \
-  -e DB_USER=ctfadmin \
+  -e PUBLIC_IP=<EC2_PUBLIC_IP> \
+  -e CHALLENGE_IMAGE=custom-sqli \
+  -e CHALLENGE_PORT_START=4000 \
+  -e CHALLENGE_PORT_END=4100 \
   -e DB_PASSWORD=ctfpassword123 \
   353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:<TAG>
 

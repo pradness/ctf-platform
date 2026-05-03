@@ -5,6 +5,38 @@ const pool = require("../config/db");
 
 const execAsync = util.promisify(exec);
 
+const MIN_CHALLENGE_PORT = Number(process.env.CHALLENGE_PORT_START || 4000);
+const MAX_CHALLENGE_PORT = Number(process.env.CHALLENGE_PORT_END || 4100);
+const MAX_PORT_BIND_ATTEMPTS = 12;
+
+const pickPortInRange = () =>
+    Math.floor(Math.random() * (MAX_CHALLENGE_PORT - MIN_CHALLENGE_PORT + 1)) + MIN_CHALLENGE_PORT;
+
+const tryStartContainer = async (imageName, flag) => {
+    let lastError;
+
+    for (let attempt = 0; attempt < MAX_PORT_BIND_ATTEMPTS; attempt += 1) {
+        const port = pickPortInRange();
+        try {
+            const { stdout } = await execAsync(
+                `docker run -d -p ${port}:80 -e FLAG="${flag}" ${imageName}`
+            );
+            return { containerId: stdout.trim(), port };
+        } catch (err) {
+            const message = err.stderr || err.message || "";
+            const isPortCollision = message.includes("port is already allocated") || message.includes("bind: address already in use");
+
+            if (!isPortCollision) {
+                throw err;
+            }
+
+            lastError = err;
+        }
+    }
+
+    throw lastError || new Error("No available challenge ports in configured range");
+};
+
 /* -------------------- START CHALLENGE -------------------- */
 exports.startChallenge = async (req, res) => {
     try {
@@ -47,23 +79,8 @@ exports.startChallenge = async (req, res) => {
         );
 
         /* -------------------- START CONTAINER -------------------- */
-        const { stdout } = await execAsync(
-            `docker run -d -P -e FLAG="${flag}" ${imageName}`
-        );
-
-        const containerId = stdout.trim();
+        const { containerId, port: mappedPort } = await tryStartContainer(imageName, flag);
         console.log("Container started:", containerId);
-
-        const { stdout: portInfo } = await execAsync(
-            `docker port ${containerId} 80/tcp`
-        );
-
-        const match = portInfo.trim().match(/:(\d+)$/);
-        if (!match) {
-            throw new Error(`Could not determine mapped port for container ${containerId}`);
-        }
-
-        const mappedPort = Number(match[1]);
 
         console.log("✅ SQLite challenge ready");
 

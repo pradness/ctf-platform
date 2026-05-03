@@ -79,6 +79,9 @@ LATEST_TAG=$(aws ecr describe-images \
   --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
   --output text)
 
+echo ">>> Removing old ctf-platform container..."
+sudo docker rm -f ctf-platform || true
+
 echo ">>> Starting ctf-platform (tag: ${LATEST_TAG})..."
 sudo docker run -d \
   --name ctf-platform \
@@ -89,6 +92,8 @@ sudo docker run -d \
   -e PORT=3000 \
   -e PUBLIC_IP=${PUBLIC_IP} \
   -e CHALLENGE_IMAGE=${CHALLENGE_IMAGE} \
+  -e CHALLENGE_PORT_START=4000 \
+  -e CHALLENGE_PORT_END=4100 \
   -e DB_HOST=${DB_HOST} \
   -e DB_PORT=5432 \
   -e DB_NAME=ctfdb \

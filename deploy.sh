@@ -26,8 +26,13 @@ docker run -d \
   --name ctf-platform \
   --restart unless-stopped \
   -p 3000:3000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --user 0:0 \
   -e PORT=3000 \
-  -e CUSTOM_SQLI_URL=http://${PUBLIC_IP}:4000 \
+  -e PUBLIC_IP=${PUBLIC_IP} \
+  -e CHALLENGE_IMAGE=custom-sqli \
+  -e CHALLENGE_PORT_START=4000 \
+  -e CHALLENGE_PORT_END=4100 \
   -e DB_HOST=${DB_HOST} \
   -e DB_PORT=5432 \
   -e DB_NAME=ctfdb \
@@ -36,15 +41,8 @@ docker run -d \
   -e JWT_SECRET=supersecretkey123 \
   ${ECR_REGISTRY}/ctf-platform:${IMAGE_TAG}
 
-echo ">>> Starting custom SQLi challenge..."
-docker build -t ctf-custom-sqli ./platform/custom-sqli
-docker rm -f ctf-custom-sqli || true
-docker run -d \
-  --name ctf-custom-sqli \
-  --restart unless-stopped \
-  -p 4000:80 \
-  -e FLAG='FLAG{custom_sqli}' \
-  ctf-custom-sqli
+echo ">>> Building custom-sqli challenge image (for backend to spawn)..."
+docker build -t custom-sqli ./platform/custom-sqli
 
 echo ">>> Building frontend..."
 cd platform/frontend

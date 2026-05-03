@@ -25,7 +25,7 @@ const Home = () => {
       
       addToast(res.message || 'Challenge started successfully', 'success');
       
-      // Open DVWA in new tab
+      // Open the challenge target in a new tab.
       if (res.url) {
         window.open(res.url, "_blank");
       }
@@ -79,7 +79,7 @@ const Home = () => {
           </div>
           
           <p className="challenge-desc">
-            Exploit SQL Injection vulnerability to retrieve the flag. A dedicated DVWA instance will be spun up just for you.
+            Exploit SQL Injection vulnerability to retrieve the flag. A dedicated vulnerable login target will open in a new tab.
           </p>
           
           <div className="card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>

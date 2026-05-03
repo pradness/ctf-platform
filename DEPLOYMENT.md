@@ -60,14 +60,19 @@ sudo docker rm -f ctf-platform || true
 # Get RDS endpoint
 RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier ctf-postgres --query 'DBInstances[0].Endpoint.Address' --output text)
 
+sudo docker rm -f ctf-platform || true
+
 sudo docker run -d \
   --name ctf-platform \
   --restart unless-stopped \
   -p 3000:3000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  --user 0:0 \
   -e PORT=3000 \
   -e PUBLIC_IP=<EC2_PUBLIC_IP> \
   -e CHALLENGE_IMAGE=custom-sqli \
+  -e CHALLENGE_PORT_START=4000 \
+  -e CHALLENGE_PORT_END=4100 \
   -e JWT_SECRET=$(openssl rand -hex 32) \
   -e DB_HOST=${RDS_ENDPOINT} \
   -e DB_PORT=5432 \
@@ -76,7 +81,7 @@ sudo docker run -d \
   -e DB_PASSWORD=ctfpassword123 \
   353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:${LATEST_TAG}
 
-# Build SQLi challenge image once on EC2 host (or pull from your registry)
+# Build challenge image on host (or pull from ECR)
 sudo docker build -t custom-sqli ./platform/custom-sqli
 
 # Initialize database (first time only)
