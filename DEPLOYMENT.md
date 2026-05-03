@@ -104,6 +104,43 @@ curl http://localhost:3000/health
 - [ ] Monitor RDS connections
 - [ ] Check application logs: `sudo docker logs ctf-platform`
 
+## Troubleshooting Challenge Runtime
+
+If challenge start fails with Docker errors, run on EC2 host:
+
+```bash
+# Docker daemon should be active on host
+sudo systemctl status docker
+sudo systemctl start docker
+
+# Backend container must have docker socket mount
+sudo docker inspect ctf-platform --format '{{json .Mounts}}' | grep docker.sock
+
+# Socket should exist inside backend container
+sudo docker exec ctf-platform ls -l /var/run/docker.sock
+```
+
+If socket mount is missing, recreate backend container with:
+
+```bash
+sudo docker rm -f ctf-platform || true
+sudo docker run -d \
+  --name ctf-platform \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e PORT=3000 \
+  -e PUBLIC_IP=<EC2_PUBLIC_IP> \
+  -e CHALLENGE_IMAGE=custom-sqli \
+  -e JWT_SECRET=<YOUR_SECRET> \
+  -e DB_HOST=<RDS_ENDPOINT> \
+  -e DB_PORT=5432 \
+  -e DB_NAME=ctfdb \
+  -e DB_USER=ctfadmin \
+  -e DB_PASSWORD=ctfpassword123 \
+  353863292008.dkr.ecr.us-east-1.amazonaws.com/ctf-platform:<TAG>
+```
+
 ## Cost Optimization
 - [ ] Stop EC2 and RDS when not in use
 - [ ] Use auto-scaling for production

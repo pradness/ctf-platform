@@ -92,6 +92,13 @@ exports.startChallenge = async (req, res) => {
             });
         }
 
+        if (errorMessage.includes("Cannot connect to the Docker daemon")) {
+            return res.status(503).json({
+                error: "Docker daemon unavailable",
+                message: "Backend cannot reach Docker daemon. Ensure Docker service is running on host and mount /var/run/docker.sock into backend container."
+            });
+        }
+
         res.status(500).json({
             error: "Internal server error",
             message: errorMessage

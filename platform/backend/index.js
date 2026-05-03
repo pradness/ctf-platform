@@ -39,6 +39,10 @@ app.get("/", (req, res) => {
     res.send("CTF Backend Running 🚀");
 });
 
+app.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
+});
+
 /* -------------------- DB TEST -------------------- */
 pool.query("SELECT NOW()")
     .then(res => console.log("DB connected:", res.rows))
