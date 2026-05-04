@@ -371,7 +371,7 @@ app.post("/login", (req, res) => {
 
     const query = `
         SELECT * FROM users
-        WHERE password='${password}' AND username='${username}'
+        WHERE username='${username}' AND password='${password}'
     `;
 
     console.log("🔥 QUERY:", query);
