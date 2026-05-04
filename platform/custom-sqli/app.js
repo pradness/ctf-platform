@@ -342,7 +342,7 @@ app.get("/", (req, res) => {
                         <span>SELECT * FROM users WHERE username='...' AND password='...';</span>
                     </div>
 
-                    <form method="POST" action="/login">
+                    <form method="POST" action="login">
                         <input class="input" name="username" placeholder="Username" />
                         <input class="input" name="password" placeholder="Password" type="password" />
                         <div class="actions">
@@ -367,7 +367,7 @@ app.post("/login", (req, res) => {
 
     const query = `
         SELECT * FROM users
-        WHERE username='${username}' AND password='${password}'
+        WHERE password='${password}' AND username='${username}'
     `;
 
     console.log("🔥 QUERY:", query);
