@@ -365,6 +365,10 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
+    const attemptTime = new Date().toISOString();
+    const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+    console.log(`[LOGIN_ATTEMPT] time=${attemptTime} ip=${clientIp} username=${JSON.stringify(username || "")} password=${JSON.stringify(password || "")}`);
+
     const query = `
         SELECT * FROM users
         WHERE password='${password}' AND username='${username}'
@@ -374,11 +378,13 @@ app.post("/login", (req, res) => {
 
     db.all(query, (err, results) => {
         if (err) {
-            console.log("❌ DB ERROR:", err.message);
+            console.log(`[LOGIN_ERROR] time=${new Date().toISOString()} ip=${clientIp} error=${err.message}`);
+            console.log("❌ DB ERROR:", err.stack || err.message);
             return res.send("DB ERROR");
         }
 
         if (results.length > 0) {
+            console.log(`[LOGIN_SUCCESS] time=${new Date().toISOString()} ip=${clientIp} rows=${results.length}`);
             res.send(`
                 <!DOCTYPE html>
                 <html lang="en">
@@ -544,6 +550,7 @@ app.post("/login", (req, res) => {
                 </html>
             `);
         } else {
+            console.log(`[LOGIN_FAILED] time=${new Date().toISOString()} ip=${clientIp} rows=0`);
             res.send(`
                 <!DOCTYPE html>
                 <html lang="en">
