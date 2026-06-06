@@ -1,4 +1,5 @@
 FROM node:20-bookworm-slim AS deps
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,6 +10,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 FROM node:20-bookworm-slim
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
