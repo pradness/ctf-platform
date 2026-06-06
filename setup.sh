@@ -82,25 +82,29 @@ LATEST_TAG=$(aws ecr describe-images \
 echo ">>> Removing old ctf-platform container..."
 sudo docker rm -f ctf-platform || true
 
-echo ">>> Starting ctf-platform (tag: ${LATEST_TAG})..."
-sudo docker run -d \
-  --name ctf-platform \
-  --restart unless-stopped \
-  -p 3000:3000 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  --user 0:0 \
-  -e PORT=3000 \
-  -e PUBLIC_IP=${PUBLIC_IP} \
-  -e CHALLENGE_IMAGE=${CHALLENGE_IMAGE} \
-  -e CHALLENGE_PORT_START=4000 \
-  -e CHALLENGE_PORT_END=4100 \
-  -e DB_HOST=${DB_HOST} \
-  -e DB_PORT=5432 \
-  -e DB_NAME=ctfdb \
-  -e DB_USER=ctfadmin \
-  -e DB_PASSWORD=ctfpassword123 \
-  -e JWT_SECRET=supersecretkey123 \
-  ${ECR_REGISTRY}/ctf-platform:${LATEST_TAG}
+if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "None" ]; then
+  echo ">>> No image in ECR yet — skipping ctf-platform start. Run Jenkins pipeline first."
+else
+  echo ">>> Starting ctf-platform (tag: ${LATEST_TAG})..."
+  sudo docker run -d \
+    --name ctf-platform \
+    --restart unless-stopped \
+    -p 3000:3000 \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --user 0:0 \
+    -e PORT=3000 \
+    -e PUBLIC_IP=${PUBLIC_IP} \
+    -e CHALLENGE_IMAGE=${CHALLENGE_IMAGE} \
+    -e CHALLENGE_PORT_START=4000 \
+    -e CHALLENGE_PORT_END=4100 \
+    -e DB_HOST=${DB_HOST} \
+    -e DB_PORT=5432 \
+    -e DB_NAME=ctfdb \
+    -e DB_USER=ctfadmin \
+    -e DB_PASSWORD=ctfpassword123 \
+    -e JWT_SECRET=supersecretkey123 \
+    ${ECR_REGISTRY}/ctf-platform:${LATEST_TAG}
+fi
 
 if [ -d "platform/custom-sqli" ]; then
   echo ">>> Building challenge image (${CHALLENGE_IMAGE})..."
