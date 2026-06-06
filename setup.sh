@@ -18,7 +18,7 @@ sudo chmod 777 /var/run/docker.sock
 echo ">>> Installing AWS CLI..."
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
 unzip /tmp/awscliv2.zip -d /tmp
-sudo /tmp/aws/install
+sudo /tmp/aws/install --update
 
 echo ">>> Installing k3s..."
 curl -sfL https://get.k3s.io | sh -
