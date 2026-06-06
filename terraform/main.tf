@@ -228,6 +228,8 @@ resource "aws_iam_role_policy" "platform_ec2_policy" {
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
         "ecr:PutImage",
+        "ecr:DescribeImages",
+        "ecr:ListImages",
         "rds:DescribeDBInstances",
         "rds:DescribeDBClusters"
       ]
@@ -268,6 +270,7 @@ resource "aws_db_instance" "postgres" {
 resource "aws_ecr_repository" "platform" {
   name                 = "ctf-platform"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 }
 
 resource "aws_ecr_repository" "sqli" {
