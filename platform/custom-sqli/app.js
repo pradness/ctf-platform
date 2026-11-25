@@ -685,7 +685,10 @@ app.post("/login", (req, res) => {
 });
 
 /* -------------------- START -------------------- */
-const PORT = process.env.PORT || 10000;
+const portFromEnv = Number(process.env.PORT);
+const PORT = Number.isInteger(portFromEnv) && portFromEnv > 0 && portFromEnv < 65536
+  ? portFromEnv
+  : 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SQLi challenge running on port ${PORT}`);
