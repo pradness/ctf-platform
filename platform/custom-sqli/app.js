@@ -13,7 +13,6 @@ const db = new sqlite3.Database(":memory:");
 
 db.serialize(() => {
     console.log("📦 Initializing SQLite DB...");
-    console.log("🚩 FLAG:", FLAG);
 
     db.run(`
         CREATE TABLE users (
@@ -686,7 +685,7 @@ app.post("/login", (req, res) => {
 });
 
 /* -------------------- START -------------------- */
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SQLi challenge running on port ${PORT}`);
