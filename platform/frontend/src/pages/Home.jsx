@@ -16,24 +16,28 @@ import { useToast } from '../components/Toast';
 const Home = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [activeChallenge, setActiveChallenge] = useState(null);
+  const [activeBoxChallenge, setActiveBoxChallenge] = useState(null);
 
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const getSqlInjectionChallenge = async () => {
+  const getChallengesList = async () => {
     const response = await challengesAPI.getChallenges();
 
     const challenges = Array.isArray(response)
       ? response
       : response?.challenges || response?.data || [];
 
-    const challengeList = Array.isArray(challenges)
-      ? challenges
-      : [];
+    return Array.isArray(challenges) ? challenges : [];
+  };
 
-    const challenge = challengeList.find(
+  const getSqlInjectionChallenge = async () => {
+    const challenges = await getChallengesList();
+
+    const challenge = challenges.find(
       (item) =>
-        item.name?.toLowerCase() === 'custom sql injection'
+        item.name?.toLowerCase() === 'custom sql injection' ||
+        item.name?.toLowerCase() === 'sql injection'
     );
 
     if (!challenge || !challenge.url) {
@@ -43,10 +47,23 @@ const Home = () => {
     return challenge;
   };
 
+  const getCTFBoxChallenge = async () => {
+    const challenges = await getChallengesList();
+
+    const challenge = challenges.find(
+      (item) => item.name?.toLowerCase() === 'ctf box'
+    );
+
+    if (!challenge || !challenge.url) {
+      throw new Error('CTF Box challenge URL not found');
+    }
+
+    return challenge;
+  };
+
   const handleStartChallenge = async () => {
     setIsStarting(true);
 
-    // Open the tab immediately to avoid popup blocking.
     const newTab = window.open('about:blank', '_blank');
 
     if (!newTab) {
@@ -81,6 +98,48 @@ const Home = () => {
     try {
       const challenge =
         activeChallenge || await getSqlInjectionChallenge();
+
+      navigate(`/submit/${challenge.id}`);
+    } catch (err) {
+      addToast(
+        err.response?.data?.message || err.message,
+        'error'
+      );
+    }
+  };
+
+  const handleStartCTFBox = async () => {
+    const newTab = window.open('about:blank', '_blank');
+
+    if (!newTab) {
+      addToast('Please allow popups for this website', 'error');
+      return;
+    }
+
+    newTab.opener = null;
+
+    try {
+      const challenge = await getCTFBoxChallenge();
+
+      newTab.location.href = challenge.url;
+
+      setActiveBoxChallenge(challenge);
+
+      addToast('CTF Box opened successfully', 'success');
+    } catch (err) {
+      newTab.close();
+
+      addToast(
+        err.response?.data?.message || err.message,
+        'error'
+      );
+    }
+  };
+
+  const handleSubmitBoxFlag = async () => {
+    try {
+      const challenge =
+        activeBoxChallenge || await getCTFBoxChallenge();
 
       navigate(`/submit/${challenge.id}`);
     } catch (err) {
@@ -225,13 +284,7 @@ const Home = () => {
 
           <div className="card-footer">
             <button
-              onClick={() =>
-                window.open(
-                  'http://16.16.253.244/',
-                  '_blank',
-                  'noopener,noreferrer'
-                )
-              }
+              onClick={handleStartCTFBox}
               className="cyber-btn primary-btn"
             >
               <Box size={18} />
@@ -239,7 +292,7 @@ const Home = () => {
             </button>
 
             <button
-              onClick={() => navigate('/submit/2')}
+              onClick={handleSubmitBoxFlag}
               className="cyber-btn secondary-btn"
             >
               <Flag size={18} />
