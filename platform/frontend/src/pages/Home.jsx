@@ -1,57 +1,93 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Cpu, Play, StopCircle, Flag, Terminal, Box, ArrowUpRight } from 'lucide-react';
-import { containerAPI } from '../services/api';
+import {
+  ShieldAlert,
+  Cpu,
+  Play,
+  Flag,
+  Terminal,
+  Box,
+  ArrowUpRight,
+} from 'lucide-react';
+import { challengesAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 
 const Home = () => {
   const [isStarting, setIsStarting] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
-  const [activeContainer, setActiveContainer] = useState(null);
+  const [activeChallenge, setActiveChallenge] = useState(null);
+
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const handleStartChallenge = async (challengeId) => {
+  const getSqlInjectionChallenge = async () => {
+    const response = await challengesAPI.getChallenges();
+
+    const challenges = Array.isArray(response)
+      ? response
+      : response?.challenges || response?.data || [];
+
+    const challengeList = Array.isArray(challenges)
+      ? challenges
+      : [];
+
+    const challenge = challengeList.find(
+      (item) =>
+        item.name?.toLowerCase() === 'custom sql injection'
+    );
+
+    if (!challenge || !challenge.url) {
+      throw new Error('SQL Injection challenge URL not found');
+    }
+
+    return challenge;
+  };
+
+  const handleStartChallenge = async () => {
     setIsStarting(true);
+
+    // Open the tab immediately to avoid popup blocking.
+    const newTab = window.open('about:blank', '_blank');
+
+    if (!newTab) {
+      addToast('Please allow popups for this website', 'error');
+      setIsStarting(false);
+      return;
+    }
+
+    newTab.opener = null;
+
     try {
-      const res = await containerAPI.start(challengeId);
+      const challenge = await getSqlInjectionChallenge();
 
-      setActiveContainer({
-        id: res.containerId,
-        url: res.url,
-        expiresAt: res.expiresAt,
-        challengeId,
-      });
+      newTab.location.href = challenge.url;
 
-      addToast(res.message || 'Challenge started successfully', 'success');
+      setActiveChallenge(challenge);
 
-      if (res.url) {
-        window.open(res.url, '_blank');
-      }
+      addToast('Challenge opened successfully', 'success');
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message;
-      if (errorMsg.includes('active container')) {
-        addToast('You already have an active container running!', 'error');
-      } else {
-        addToast(errorMsg, 'error');
-      }
+      newTab.close();
+
+      addToast(
+        err.response?.data?.message || err.message,
+        'error'
+      );
     } finally {
       setIsStarting(false);
     }
   };
 
-  const handleStopChallenge = async () => {
-    if (!activeContainer) return;
-
-    setIsStopping(true);
+  const handleSubmitFlag = async () => {
     try {
-      await containerAPI.stop(activeContainer.id);
-      addToast('Container stopped successfully', 'success');
-      setActiveContainer(null);
+      const challenge =
+        activeChallenge || await getSqlInjectionChallenge();
+
+      navigate(`/submit/${challenge.id}`);
     } catch (err) {
-      addToast(err.response?.data?.message || 'Failed to stop container', 'error');
-    } finally {
-      setIsStopping(false);
+      addToast(
+        err.response?.data?.message || err.message,
+        'error'
+      );
     }
   };
 
@@ -63,17 +99,32 @@ const Home = () => {
             <Terminal size={14} />
             DASHBOARD
           </div>
-          <h1 className="cyber-title lg" data-glitch="CTF DASHBOARD">CTF DASHBOARD</h1>
-          <p className="cyber-subtitle">Launch targets, submit flags, and track progress from one shell.</p>
+
+          <h1
+            className="cyber-title lg"
+            data-glitch="CTF DASHBOARD"
+          >
+            CTF DASHBOARD
+          </h1>
+
+          <p className="cyber-subtitle">
+            Launch targets, submit flags, and track progress from one shell.
+          </p>
         </div>
+
         <div className="stats-panel glass-panel">
           <div className="stat-item">
             <span className="stat-label">STATUS:</span>
-            <span className="stat-value neon-text-blue">ONLINE</span>
+            <span className="stat-value neon-text-blue">
+              ONLINE
+            </span>
           </div>
+
           <div className="stat-item">
             <span className="stat-label">MODE:</span>
-            <span className="stat-value neon-text-green">CONTEST</span>
+            <span className="stat-value neon-text-green">
+              CONTEST
+            </span>
           </div>
         </div>
       </header>
@@ -83,32 +134,53 @@ const Home = () => {
           <div className="card-header">
             <div>
               <p className="card-kicker">TARGET 01</p>
-              <h2 className="challenge-title">SQL Injection Challenge</h2>
+              <h2 className="challenge-title">
+                SQL Injection Challenge
+              </h2>
             </div>
-            <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
+
+            <span className="status-badge available">
+              <ShieldAlert size={14} />
+              ACTIVE
+            </span>
           </div>
 
           <p className="challenge-desc">
-            Exploit the login flow, extract the hidden flag, and submit it from the terminal panel.
+            Exploit the login flow, extract the hidden flag,
+            and submit it from the terminal panel.
           </p>
 
           <div className="mini-terminal">
-            <span className="prompt">root@ctf:~#</span> start target --sqli
+            <span className="prompt">root@ctf:~#</span>{' '}
+            start target --sqli
           </div>
 
           <div className="card-footer">
             <button
-              onClick={() => handleStartChallenge(1)}
+              onClick={handleStartChallenge}
               className="cyber-btn primary-btn"
               disabled={isStarting}
             >
-              {isStarting ? <Cpu className="spin" size={18} /> : <Play size={18} />}
-              {isStarting ? 'INITIALIZING...' : 'START CHALLENGE'}
+              {isStarting ? (
+                <Cpu className="spin" size={18} />
+              ) : (
+                <Play size={18} />
+              )}
+
+              {isStarting
+                ? 'INITIALIZING...'
+                : 'START CHALLENGE'}
             </button>
 
-            {activeContainer?.challengeId === 1 && (
+            {activeChallenge && (
               <button
-                onClick={() => window.open(activeContainer.url, '_blank')}
+                onClick={() =>
+                  window.open(
+                    activeChallenge.url,
+                    '_blank',
+                    'noopener,noreferrer'
+                  )
+                }
                 className="cyber-btn secondary-btn"
               >
                 <ArrowUpRight size={18} />
@@ -117,24 +189,12 @@ const Home = () => {
             )}
 
             <button
-              onClick={() => navigate('/submit/1')}
+              onClick={handleSubmitFlag}
               className="cyber-btn secondary-btn"
             >
               <Flag size={18} />
               SUBMIT FLAG
             </button>
-
-            {activeContainer?.challengeId === 1 && (
-              <button
-                onClick={handleStopChallenge}
-                className="cyber-btn"
-                style={{ borderColor: 'var(--neon-red)', color: 'var(--neon-red)', marginLeft: 'auto' }}
-                disabled={isStopping}
-              >
-                <StopCircle size={18} />
-                STOP
-              </button>
-            )}
           </div>
         </div>
 
@@ -142,22 +202,36 @@ const Home = () => {
           <div className="card-header">
             <div>
               <p className="card-kicker">TARGET 02</p>
-              <h2 className="challenge-title">CTF Box</h2>
+              <h2 className="challenge-title">
+                CTF Box
+              </h2>
             </div>
-            <span className="status-badge available"><ShieldAlert size={14} /> ACTIVE</span>
+
+            <span className="status-badge available">
+              <ShieldAlert size={14} />
+              ACTIVE
+            </span>
           </div>
 
           <p className="challenge-desc">
-            Multi-flag challenge. Open the box, explore the host, and harvest every hidden flag.
+            Multi-flag challenge. Open the box, explore the
+            host, and harvest every hidden flag.
           </p>
 
           <div className="mini-terminal">
-            <span className="prompt">root@ctf:~#</span> ssh lab@external-box
+            <span className="prompt">root@ctf:~#</span>{' '}
+            ssh lab@external-box
           </div>
 
           <div className="card-footer">
             <button
-              onClick={() => window.open('http://16.16.253.244/', '_blank')}
+              onClick={() =>
+                window.open(
+                  'http://16.16.253.244/',
+                  '_blank',
+                  'noopener,noreferrer'
+                )
+              }
               className="cyber-btn primary-btn"
             >
               <Box size={18} />

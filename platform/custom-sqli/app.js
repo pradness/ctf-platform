@@ -686,6 +686,8 @@ app.post("/login", (req, res) => {
 });
 
 /* -------------------- START -------------------- */
-app.listen(80, () => {
-    console.log("🚀 App running on port 80");
+const PORT = process.env.PORT || 80;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`SQLi challenge running on port ${PORT}`);
 });
