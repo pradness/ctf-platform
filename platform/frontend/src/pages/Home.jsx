@@ -120,6 +120,8 @@ const Home = () => {
 
     try {
       const challenge = await getCTFBoxChallenge();
+      console.log("CTF Box URL:", challenge.url);
+
 
       newTab.location.href = challenge.url;
 
