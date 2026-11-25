@@ -1,3 +1,4 @@
+
 require("./config/env");
 
 const express = require("express");
@@ -9,6 +10,10 @@ function createApp() {
     app.use(express.json());
     app.use(cors());
 
+    app.get("/", (_req, res) => {
+        res.send("CTF Backend Running 🚀");
+    });
+
     app.get("/health", (_req, res) => {
         res.json({ status: "ok" });
     });
@@ -17,6 +22,7 @@ function createApp() {
     app.use("/challenges", require("./routes/challengeRoutes"));
     app.use("/submit", require("./routes/flagRoutes"));
     app.use("/leaderboard", require("./routes/leaderboardRoutes"));
+    app.use("/container", require("./routes/containerRoutes"));
 
     return app;
 }
