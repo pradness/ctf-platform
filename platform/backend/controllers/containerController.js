@@ -1,3 +1,4 @@
+
 const { exec } = require("child_process");
 const util = require("util");
 const crypto = require("crypto");
@@ -47,7 +48,13 @@ exports.startChallenge = async (req, res) => {
             return res.status(400).json({ message: "Invalid challenge id" });
         }
 
-        const imageName = process.env.CHALLENGE_IMAGE || "custom-sqli";
+        const challengeUrl = process.env.CHALLENGE_URL;
+
+        if (!challengeUrl) {
+            return res.status(503).json({
+                message: "Challenge URL is not configured"
+            });
+        }
 
         const existing = await pool.query(
             "SELECT * FROM containers WHERE user_id=$1 AND expires_at > NOW()",
@@ -60,16 +67,13 @@ exports.startChallenge = async (req, res) => {
             });
         }
 
-        // Clear stale rows so old container records don't block challenge start.
         await pool.query(
             "DELETE FROM containers WHERE user_id=$1 AND expires_at <= NOW()",
             [userId]
         );
 
         const flag = `FLAG{${userId}_${crypto.randomBytes(4).toString("hex")}}`;
-        console.log("Generated flag:", flag);
 
-        // Upsert the per-user challenge flag to avoid UNIQUE(user_id, challenge_id) violations.
         await pool.query(
             `INSERT INTO user_flags (user_id, challenge_id, flag)
              VALUES ($1,$2,$3)
@@ -78,23 +82,11 @@ exports.startChallenge = async (req, res) => {
             [userId, challengeId, flag]
         );
 
-        /* -------------------- START CONTAINER -------------------- */
-        const { containerId, port: mappedPort } = await tryStartContainer(imageName, flag);
-        console.log("Container started:", containerId);
-
-        console.log("✅ SQLite challenge ready");
-
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-        await pool.query(
-            "INSERT INTO containers (user_id, container_id, port, expires_at) VALUES ($1,$2,$3,$4)",
-            [userId, containerId, mappedPort, expiresAt]
-        );
 
         res.json({
             message: "Challenge started",
-            url: `http://${process.env.PUBLIC_IP}:${mappedPort}`,
-            containerId,
+            url: challengeUrl,
             expiresAt
         });
 
@@ -102,19 +94,6 @@ exports.startChallenge = async (req, res) => {
         console.error("Start error:", err);
 
         const errorMessage = err.stderr || err.message || "Internal server error";
-        if (errorMessage.includes("docker: not found")) {
-            return res.status(503).json({
-                error: "Docker runtime unavailable",
-                message: "Challenge runtime is not configured on server. Ensure Docker CLI is installed and /var/run/docker.sock is mounted into backend service."
-            });
-        }
-
-        if (errorMessage.includes("Cannot connect to the Docker daemon")) {
-            return res.status(503).json({
-                error: "Docker daemon unavailable",
-                message: "Backend cannot reach Docker daemon. Ensure Docker service is running on host and mount /var/run/docker.sock into backend container."
-            });
-        }
 
         res.status(500).json({
             error: "Internal server error",
